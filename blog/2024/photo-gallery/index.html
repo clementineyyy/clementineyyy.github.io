@@ -18,7 +18,9 @@
   });
   photoswipe.init();
 </script> <script defer src="https://cdn.jsdelivr.net/npm/spotlight.js@0.7.8/dist/spotlight.bundle.min.js" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/venobox@2.1.8/dist/venobox.min.js" integrity="sha256-LsGXHsHMMmTcz3KqTaWvLv6ome+7pRiic2LPnzTfiSo=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/venobox-setup.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
-    addBackToTop();
+    addBackToTop({
+      cornerOffset: 20
+    });
   </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
 // get the ninja-keys element
 const ninja = document.querySelector('ninja-keys');
