@@ -4,7 +4,7 @@ set -euo pipefail
 echo "Entry point script running"
 
 CONFIG_FILE=_config.yml
-WATCH_DIRS=("_config.yml" "_posts" "_pages" "_projects" "_news" "_data" "_includes" "_bibliography" "_books" "_teachings")
+WATCH_DIRS=("_config.yml" "_posts" "_pages" "_projects" "_news" "_data" "_includes" "_layouts" "_bibliography" "_books" "_teachings" "assets" "_sass")
 
 manage_gemfile_lock() {
     git config --global --add safe.directory /srv/jekyll
