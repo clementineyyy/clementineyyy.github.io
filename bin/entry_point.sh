@@ -51,11 +51,12 @@ get_latest_mtime() {
         if [ -f "/srv/jekyll/$dir" ]; then
             mtime=$(stat -c %Y "/srv/jekyll/$dir" 2>/dev/null || echo 0)
         elif [ -d "/srv/jekyll/$dir" ]; then
-            mtime=$(find "/srv/jekyll/$dir" -type f -exec stat -c %Y {} + 2>/dev/null | sort -rn | head -1 || echo 0)
+            mtime=$(find "/srv/jekyll/$dir" -type f -exec stat -c %Y {} + 2>/dev/null | sort -rn | head -1)
+            mtime=${mtime:-0}
         else
             mtime=0
         fi
-        [ "$mtime" -gt "$latest" ] && latest=$mtime
+        [ "$mtime" -gt "$latest" ] 2>/dev/null && latest=$mtime
     done
     echo "$latest"
 }
