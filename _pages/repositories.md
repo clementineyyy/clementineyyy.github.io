@@ -6,7 +6,7 @@ description: This page lists the status of my GitHub account and my GitHub repos
 nav: true
 nav_order: 4
 _styles: >
-  .post h2 { text-align: center; margin-top: 2rem; }
+  .post h2 { text-align: center; margin-top: 1rem; }
 ---
 
 {% if site.data.repositories.github_users %}
