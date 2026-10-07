@@ -33,16 +33,16 @@ cv:
         highlights:
           - School of Computer Science and Technology
 
-    Experience:
-      - company: # Institute for Advanced Study, Princeton University
-        position: Professor of Theoretical Physics
-        location: Princeton University, NJ
-        start_date: 1933
-        end_date: PRESENT
-        summary: Teaching at Palmer Physical Laboratory (now 302 Frist Campus Center). While not a professor at Princeton, I associated with the physics professors and continued to give lectures on campus.
-        highlights:
-          - Relativity
-          - Description 2.
+    # Experience:
+    #   - company: # Institute for Advanced Study, Princeton University
+        # position: Professor of Theoretical Physics
+        # location: Princeton University, NJ
+        # start_date: 1933
+        # end_date: 1935
+        # summary: Teaching at Palmer Physical Laboratory (now 302 Frist Campus Center). While not a professor at Princeton, I associated with the physics professors and continued to give lectures on campus.
+        # highlights:
+        #   - Relativity
+        #   - Description 2.
 
     Skills:
       - name: Software Engineering
