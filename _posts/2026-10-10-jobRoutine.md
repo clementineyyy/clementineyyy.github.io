@@ -30,6 +30,27 @@ toc:
 * 具体岗位信息见 [计算机专业求职-岗位信息](https://clementineyyy.github.io/blog/2026/jobInfo/)
 
 # Step3. 撰写简历
-* 尽早准备简历并不断优化 (每年/每份实习or工作结束/每完成一个项目之后都更新一次，认清自己的技术强项和短板，加强个人能力护城河，不被AI/其他人淘汰)，至少在秋招6-8月/春招2-3月提前半个月准备好简历随时投递
-* 具体简历撰写方法见 [计算机专业求职-简历撰写]()
-* 简历上的项目/工作经历需要符合招聘方业务场景，太过于通用的话容易被简历挂 (比如针对一家跨境电商公司，做的项目就要和他们的业务相关，而不是很宽泛的什么技术因为HR不懂技术)，要往招聘方的业务上靠近
+* 尽早准备简历并不断优化 (每年/每份实习or工作结束/**每完成一个项目**之后都更新一次，认清自己的技术强项和短板，加强个人能力**护城河**，不被AI/其他人淘汰)，至少在秋招6-8月/春招2-3月**提前半个月**准备好简历随时投递
+* 具体简历撰写方法见 [计算机专业求职-简历撰写](https://clementineyyy.github.io/blog/2026/cvWriting/)
+* 
+
+# 特殊情况-Offer违约处理
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/jobRoutine/penal.png.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/jobRoutine/beforeSign.png.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/jobRoutine/afterSign.png.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    违约金赔付
+</div>
+
+
+# 参考文献
+1. [程序员鱼皮的找工作视频](https://www.bilibili.com/video/BV1LEQLYqEGT/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)
+2. [程序员鱼皮求职指南](https://www.codefather.cn/course/1899655354088226817?tabKey=info&contentType=text)
