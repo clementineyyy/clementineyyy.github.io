@@ -1,0 +1,20 @@
+<br>
+<hr>
+<br>
+
+如果您需要引用本文，请参考：
+
+{% capture citation_code -%}
+```bibtex
+@article{ {{- site.last_name | downcase }}{{ page.date | date: "%Y" }}{{ page.title | slugify }},
+  title   = { {{- page.title -}} },
+  author  = { {{- site.last_name }}, {{ site.first_name }}{% if site.middle_name %} {{ site.middle_name }}{% endif -%}},
+  {%- if site.title != 'blank' %}journal = { {{- site.title -}} },{% endif %}
+  journal = {Xinlu's Blog},
+  year    = { {{- page.date | date: "%Y" -}} },
+  month   = { {{- page.date | date: "%b" -}} },
+  url     = { {{- site.url }}{{ page.url -}} }
+}
+```
+{%- endcapture %}
+{{ citation_code | markdownify }}

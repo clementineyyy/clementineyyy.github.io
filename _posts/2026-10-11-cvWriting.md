@@ -59,16 +59,16 @@ toc:
 更真实：简历需要包装，但是项目最好可以上线，提供网址/开源地址（但是必须确保网址可以访问，不然是减分项）；说自己写作能力强，就提供博客或文档地址。如上图所示。
 
 <div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+    <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize4-1.png" class="img-fluid rounded z-depth-1" %}
     </div>
-    <div class="col-sm mt-3 mt-md-0">
+    <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize4-2.png" class="img-fluid rounded z-depth-1" %}
     </div>
-    <div class="col-sm mt-3 mt-md-0">
+    <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize4-3.png" class="img-fluid rounded z-depth-1" %}
     </div>
-    <div class="col-sm mt-3 mt-md-0">
+    <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize4-4.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
