@@ -6,6 +6,8 @@ description: 本文整理了计算机专业求职的完整流程，包括确定�
 tags: methodology job-application
 categories: career-planning
 citation: true
+toc: 
+  sidebar: left
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
 ---
 
@@ -20,11 +22,11 @@ citation: true
   * 薪资相较央国企 & 银行更高
   * 对于外企，如Nvidia、微软、英特尔、谷歌、Cadence、甲骨文等，工作节奏较国内大厂更合理一点 (也分岗位和团队，不能一概而论)
   * 中厂（非传统互联网公司也有对口岗位，如制造业、汽车行业、芯片行业等）：华为、小米、美团、京东、拼多多、小红书、影石Insta360 (深圳起家，做相机的)、大疆 （深圳起家，做相机的）、GoPro (美国牌子，做相机的) etc.
-  * 具体公司信息见 [计算机专业求职-公司信息](https://clementineyyy.github.io/blog/2026/jobInfo/) 
+  * 具体公司信息见 [计算机专业求职-公司信息](https://clementineyyy.github.io/blog/2026/companyInfo/) 
 * ~~央国企 & 银行：没什么发展潜力，真正好的岗位竞争极大（所需要的入党、学生干部经历、研会经历、高绩点、奖学金等优先考虑条件在研一研二就已经结束）~~
 
 # Step2. 获取岗位信息
 * 直接上招聘网站看岗位描述JD，重点看岗位数量HC、薪资和招聘要求，多搜几个岗位基本就清楚了（小红书/B站/微信/知乎上每个岗位都有叫衰的）
-* 具体岗位信息见 [计算机专业求职-岗位信息]()
+* 具体岗位信息见 [计算机专业求职-岗位信息](https://clementineyyy.github.io/blog/2026/jobInfo/)
 
 
