@@ -211,7 +211,7 @@ ninja.data = [{
         
           title: "计算机专业求职-简历撰写方法",
         
-        description: "本文整理了计算机专业撰写简历的方法和技巧，",
+        description: "本文整理了计算机专业撰写简历的方法和技巧，以提升投递命中率",
         section: "Posts",
         handler: () => {
           
@@ -348,7 +348,7 @@ ninja.data = [{
             var n = map[p];
             if (typeof n !== "number" && cfg.baseurl && p.indexOf(cfg.baseurl) === 0) n = map[p.slice(cfg.baseurl.length)];
             if (typeof n !== "number") n = 0;
-            el.innerHTML = " &middot; &#128065; " + n + " views";
+            el.innerHTML = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;&#128065;&nbsp;" + n + "&nbsp;views";
           });
         })
         .catch(function () {});
