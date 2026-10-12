@@ -2,7 +2,7 @@
 layout: post
 title: 计算机专业求职-简历撰写方法
 date: 2026-10-11 12:03:00
-description: 本文整理了计算机专业撰写简历的方法和技巧，
+description: 本文整理了计算机专业撰写简历的方法和技巧，以提升投递命中率
 tags: methodology job-application
 categories: career-planning
 citation: true

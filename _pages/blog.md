@@ -87,6 +87,7 @@ pagination:
                       {{ read_time }} min read &nbsp; &middot; &nbsp;
                       <a href="{{ year | prepend: '/blog/' | relative_url }}">
                         <i class="fa-solid fa-calendar fa-sm"></i> {{ year }} </a>
+                      <span class="post-views" data-pv="{{ post.url }}"></span>
                     </p>
                   </div>
                 </div>

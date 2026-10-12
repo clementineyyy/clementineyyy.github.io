@@ -373,7 +373,7 @@
             var n = map[p];
             if (typeof n !== "number" && cfg.baseurl && p.indexOf(cfg.baseurl) === 0) n = map[p.slice(cfg.baseurl.length)];
             if (typeof n !== "number") n = 0;
-            el.innerHTML = " &middot; &#128065; " + n + " views";
+            el.innerHTML = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;&#128065;&nbsp;" + n + "&nbsp;views";
           });
         })
         .catch(function () {});
