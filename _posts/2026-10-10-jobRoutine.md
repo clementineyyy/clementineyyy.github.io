@@ -6,6 +6,7 @@ description: 本文整理了计算机专业求职的完整流程，包括确定�
 tags: methodology job-application
 categories: career-planning
 citation: true
+disqus_comments: true
 toc: 
   sidebar: left
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
