@@ -319,11 +319,12 @@
 
 <!-- GoatCounter -->
 {% if site.goatcounter_endpoint %}
-  <script data-goatcounter="{{ site.goatcounter_endpoint }}" async src="{{ '/assets/js/count.js' | relative_url | bust_file_cache }}"></script>
   {% comment %}
-    Per-post pageviews are read from the GoatCounter JSON API, which requires an API key
-    (account menu -> API). That key ships in this public JS, so use a read-only key and
-    revoke it under Settings -> API if it ever leaks.
+    Pageviews are reported directly instead of via count.js: that script's sendBeacon path never
+    reached GoatCounter here, while same-origin fetch to the same host works fine. Kept self-hosted
+    (assets/js/count.js) is no longer needed, so nothing from the blocked gc.zgo.at CDN is loaded.
+    Per-post counts are read from the JSON API, which needs an API key (account menu -> API); that
+    key ships in this public JS, so use a read-only key and revoke it under Settings -> API if it leaks.
   {% endcomment %}
   {% assign gc_host = site.goatcounter_endpoint | replace: 'https://', '' | replace: 'http://', '' | replace: '/count', '' %}
   {% assign gc_key = site.goatcounter_api_key | default: '' %}
@@ -331,6 +332,19 @@
     window.afPageviews = { host: "{{ gc_host }}", key: "{{ gc_key }}", baseurl: "{{ site.baseurl }}" };
     (function () {
       var cfg = window.afPageviews;
+
+      // Report the pageview. Localhost / LAN addresses are skipped so local previews don't
+      // pollute real numbers.
+      if (!/(^localhost$|^127\.|^10\.|^192\.168\.)/.test(window.location.hostname)) {
+        var hit =
+          "https://" + cfg.host + "/count?p=" + encodeURIComponent(window.location.pathname) +
+          "&t=" + encodeURIComponent(document.title) +
+          "&s=" + window.screen.width +
+          "&rnd=" + Math.random().toString(36).substr(2, 5);
+        try {
+          fetch(hit, { keepalive: true, mode: "no-cors", credentials: "omit" }).catch(function () {});
+        } catch (e) {}
+      }
       var els = [].slice.call(document.querySelectorAll("[data-pv]"));
       if (!els.length || !cfg.key) return;
       var end = new Date();
