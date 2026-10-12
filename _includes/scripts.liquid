@@ -319,7 +319,7 @@
 
 <!-- GoatCounter -->
 {% if site.goatcounter_endpoint %}
-  <script data-goatcounter="{{ site.goatcounter_endpoint }}" async src="//gc.zgo.at/count.js"></script>
+  <script data-goatcounter="{{ site.goatcounter_endpoint }}" async src="{{ '/assets/js/count.js' | relative_url | bust_file_cache }}"></script>
   {% comment %}
     Per-post pageviews are read from the GoatCounter JSON API, which requires an API key
     (account menu -> API). That key ships in this public JS, so use a read-only key and
