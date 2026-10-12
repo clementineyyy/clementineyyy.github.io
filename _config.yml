@@ -155,7 +155,7 @@ related_blog_posts:
 giscus:
   repo: clementineyyy/clementineyyy.github.io
   repo_id: R_kgDOU75PeA
-  category: Comments
+  category: Announcements
   category_id: DIC_kwDOU75PeM4DH8dc
   mapping: title
   strict: 1
