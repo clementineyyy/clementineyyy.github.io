@@ -362,8 +362,12 @@
           return r.json();
         })
         .then(function (d) {
+          // GoatCounter stores paths with any trailing slash stripped, so index both forms.
           var map = {};
-          ((d && d.hits) || []).forEach(function (h) { map[h.path] = h.count; });
+          ((d && d.hits) || []).forEach(function (h) {
+            map[h.path] = h.count;
+            map[h.path + "/"] = h.count;
+          });
           els.forEach(function (el) {
             var p = el.getAttribute("data-pv") || window.location.pathname;
             var n = map[p];
