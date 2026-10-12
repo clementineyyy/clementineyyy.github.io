@@ -316,3 +316,49 @@
   <!-- Marimo notebooks -->
   {% include plugins/al_marimo_scripts.liquid %}
 {% endif %}
+
+<!-- GoatCounter -->
+{% if site.goatcounter_endpoint %}
+  <script data-goatcounter="{{ site.goatcounter_endpoint }}" async src="//gc.zgo.at/count.js"></script>
+  {% comment %}
+    Per-post pageviews are read from the GoatCounter JSON API, which requires an API key
+    (account menu -> API). That key ships in this public JS, so use a read-only key and
+    revoke it under Settings -> API if it ever leaks.
+  {% endcomment %}
+  {% assign gc_host = site.goatcounter_endpoint | replace: 'https://', '' | replace: 'http://', '' | replace: '/count', '' %}
+  {% assign gc_key = site.goatcounter_api_key | default: '' %}
+  <script>
+    window.afPageviews = { host: "{{ gc_host }}", key: "{{ gc_key }}", baseurl: "{{ site.baseurl }}" };
+    (function () {
+      var cfg = window.afPageviews;
+      var els = [].slice.call(document.querySelectorAll("[data-pv]"));
+      if (!els.length || !cfg.key) return;
+      var end = new Date();
+      var start = new Date(end.getTime() - 1000 * 60 * 60 * 24 * 365 * 5);
+      function iso(d) {
+        return d.toISOString().slice(0, 13) + ":00:00Z";
+      }
+      var url =
+        "https://" + cfg.host + "/api/v0/stats/hits?path_by_name=true&limit=500" +
+        "&start=" + encodeURIComponent(iso(start)) +
+        "&end=" + encodeURIComponent(iso(end));
+      fetch(url, { headers: { Authorization: "Bearer " + cfg.key } })
+        .then(function (r) {
+          if (!r.ok) throw new Error("gc " + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          var map = {};
+          ((d && d.hits) || []).forEach(function (h) { map[h.path] = h.count; });
+          els.forEach(function (el) {
+            var p = el.getAttribute("data-pv") || window.location.pathname;
+            var n = map[p];
+            if (typeof n !== "number" && cfg.baseurl && p.indexOf(cfg.baseurl) === 0) n = map[p.slice(cfg.baseurl.length)];
+            if (typeof n !== "number") n = 0;
+            el.innerHTML = " &middot; &#128065; " + n + " views";
+          });
+        })
+        .catch(function () {});
+    })();
+  </script>
+{% endif %}

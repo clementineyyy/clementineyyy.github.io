@@ -16,6 +16,8 @@ footer_text: >
   Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
 keywords: blog, software engineering, agent harnessing # add your own keywords or leave empty
 lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
+goatcounter_endpoint: https://clementineyyy.goatcounter.com/count # page-view stats, shown on blog posts
+goatcounter_api_key: 1guabtz7e8ptq1oems3dpuqi88fdoryrtw6o0y119zxf1uc0jmz # from GoatCounter account menu -> API; exposed in page JS, use a read-only key
 icon: shooky.jpg # test: polling detection works
 apple_touch_icon: # image name in /assets/img/ (or a rooted path / absolute URL) used for iOS home-screen bookmarks; needs a real 180x180 PNG, since Safari ignores the emoji favicon above. Left empty, iOS falls back to a screenshot of the page.
 

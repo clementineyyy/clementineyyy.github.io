@@ -143,6 +143,7 @@ pagination:
       <p class="post-meta">
         {{ read_time }} min read &nbsp; &middot; &nbsp;
         {{ post.date | date: '%B %d, %Y' }}
+        <span class="post-views" data-pv="{{ post.url }}"></span>
         {% if post.external_source %}
         &nbsp; &middot; &nbsp; {{ post.external_source }}
         {% endif %}
