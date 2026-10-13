@@ -173,23 +173,31 @@
 
 {% if page.toc and page.toc.sidebar %}
   <script>
-    window.addEventListener("load", function () {
-      if (window.tocbot && typeof window.tocbot.init === "function") {
-        window.tocbot.destroy();
+    {% comment %}
+      al_folio_core's common.js calls tocbot.init() on DOMContentLoaded with a hardcoded
+      "h2, h3" headingSelector. We re-run it once right after that, using setTimeout(0) so our pass
+      lands *after* every DOMContentLoaded listener (including the gem's). Doing it on DOMContentLoaded
+      rather than window.load keeps the sidebar correct from first paint — waiting for load made
+      level-1 headings pop in seconds late.
+    {% endcomment %}
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(function () {
+        if (!window.tocbot || typeof window.tocbot.init !== "function") return;
+        if (typeof window.tocbot.destroy === "function") window.tocbot.destroy();
         window.tocbot.init({
           tocSelector: "#toc-sidebar",
           contentSelector: '[role="main"]',
           headingSelector: "h1, h2, h3",
-          ignoreSelector: "[data-toc-skip]",
+          ignoreSelector: "[data-toc-skip], .post-title",
           hasInnerContainers: true,
           collapseDepth: 1,
           orderedList: false,
           activeLinkClass: "is-active-link",
           scrollSmooth: true,
           scrollSmoothOffset: -80,
-          headingsOffset: 80
+          headingsOffset: 80,
         });
-      }
+      }, 0);
     });
   </script>
 {% endif %}
