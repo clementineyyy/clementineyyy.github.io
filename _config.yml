@@ -551,7 +551,7 @@ third_party_libraries:
       css: "sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0="
       js: "sha256-lo/r+jQ81wWrxdIiiiEEd538z4+dTJTt+leOuAS7GCw="
     url:
-      css: "https://cdn.jsdelivr.net/npm/tocbot@{{version}}/dist/tocbot.css"
+      css: "/assets/css/tocbot.css"
       js: "https://cdn.jsdelivr.net/npm/tocbot@{{version}}/dist/tocbot.min.js"
     version: "4.36.4"
   plotly:

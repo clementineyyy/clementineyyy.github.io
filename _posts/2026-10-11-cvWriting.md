@@ -99,3 +99,4 @@ toc:
 # 参考文献
 1. [程序员鱼皮的找工作视频](https://www.bilibili.com/video/BV1LEQLYqEGT/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)
 2. [程序员鱼皮求职指南](https://www.codefather.cn/course/1899655354088226817?tabKey=info&contentType=text)
+3. [框框的简历教程](https://www.bilibili.com/video/BV1NL4y1878J/?spm_id_from=333.788.recommend_more_video.0&trackid=web_related_0.router-related-2479604-97qjn.1792376583863.443&vd_source=4969daf431801d632f64c5d68e1819ff)

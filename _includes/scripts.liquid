@@ -83,21 +83,43 @@
     overflow: visible !important;
     max-height: none !important;
   }
-  #toc-sidebar .toc-list {
-    padding-left: 0 !important;
+  {% comment %}
+    tocbot.css is inlined (647 bytes) because the gem's <link> carries crossorigin="anonymous"
+    and integrity, which browsers reject on a same-origin stylesheet unless the server sends
+    CORS headers -- so the file never applied. Inlining removes the external request entirely.
+  {% endcomment %}
+  .toc { overflow-y: auto; }
+  .toc > .toc-list { overflow: hidden; position: relative; }
+  .toc > .toc-list li { list-style: none; }
+  .toc-list { margin: 0; padding-left: 10px; }
+  a.toc-link { color: currentColor; height: 100%; }
+  .is-collapsible { max-height: 1000px; overflow: hidden; transition: all 300ms ease-in-out; }
+  .is-collapsed { max-height: 0; }
+  .is-collapsed:has(:focus) { max-height: 1000px; }
+  .is-position-fixed { position: fixed !important; top: 0; }
+  .is-active-link { font-weight: 700; }
+
+  /* One continuous guide line at the level-1 left x. Drawing it on the list container
+     (instead of per-link ticks) makes it continuous and shared across all nesting levels. */
+  #toc-sidebar > .toc-list {
+    --toc-line-x: 0.8rem;
+    padding-left: var(--toc-line-x);
   }
-  #toc-sidebar .toc-list .toc-list .toc-link {
-    padding-left: 1rem !important;
+  #toc-sidebar > .toc-list::before {
+    content: "";
+    position: absolute;
+    left: var(--toc-line-x);
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: color-mix(in srgb, var(--global-divider-color) 80%, transparent);
   }
-  #toc-sidebar .toc-list .toc-list .toc-list .toc-link {
-    padding-left: 2rem !important;
+  #toc-sidebar .toc-link::before,
+  #toc-sidebar .toc-link.is-active-link::before {
+    display: none;
   }
-  #toc-sidebar .toc-link::before {
-    left: 0 !important;
-  }
-  #toc-sidebar .toc-link {
-    font-size: 1.1rem !important;
-  }
+  #toc-sidebar .toc-link:hover { color: var(--global-hover-color); text-decoration: none; }
+  #toc-sidebar .toc-link.is-active-link { color: var(--global-theme-color); font-weight: 600; }
   .giscus, .giscus-frame {
     width: 100% !important;
   }
@@ -239,13 +261,9 @@
 {% endif %}
 
 {% if page.toc and page.toc.sidebar %}
-  <!-- Tocbot -->
-  <script
-    defer
-    src="{{ site.third_party_libraries.tocbot.url.js }}"
-    integrity="{{ site.third_party_libraries.tocbot.integrity.js }}"
-    crossorigin="anonymous"
-  ></script>
+  <!-- Tocbot (self-hosted: the CDN is blocked in some networks, leaving window.tocbot
+       undefined and the gem's fallback TOC renders only h2/h3) -->
+  <script defer src="{{ '/assets/js/tocbot.min.js' | relative_url | bust_file_cache }}"></script>
 {% endif %}
 
 <!-- Load Common JS -->
