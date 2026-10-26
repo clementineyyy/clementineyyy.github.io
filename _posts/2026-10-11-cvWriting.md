@@ -31,6 +31,8 @@ toc:
 
 
 # 优化简历
+[酥神简历优化skill](https://103.14.76.98/sub/fsc/290c01698aa4ea64bbe239931a807dfd)
+
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize1.png" class="img-fluid rounded z-depth-1" %}

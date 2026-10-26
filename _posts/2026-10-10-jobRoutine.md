@@ -198,7 +198,7 @@ HR面：问你遇到的挑战、职业规划、解决问题，正常交流即可
 1. 你有没有真实地使用AI coding？你自己使用过哪些AI coding的产品？这些产品的各个差异？(考察对codex、claude code等全球顶级agent工具是否使用过；是否有自己的思考见解)
 2. 你自己的AI coding的工作流是怎样的？
    * 考察AI coding的熟练度和能力，要说怎么用AI、用了哪些东西来实现
-   * [AI coding方法论]()
+   * [AI coding方法论](https://clementineyyy.github.io/blog/2026/aicodingMethodology/)
    * 比如：跟AI讨论进行需求分析 (用需求分析的skills如superpowers中的brainstorming来充分讨论，产生specs文档，然后AI将specs文档转成plan文档，plan文档中包含多个步骤由不同的subagent去执行)、AI规划代码编写、code review (分两个阶段：代码功能review确保代码没有出问题+代码整洁review即遵循项目中的规范、优雅的设计、代码没有和最初的specs文档出现偏差)、测试、版本控制、文档整理 (文档更新对齐)，具体用skills或其他方式实现。~~而不是先需求分析、写plan再review这样的车轱辘话~~
 3. 你自己常用的skills？
    * 考察对AI的钻研度，还能说出自己对于这些skills的理解和看法，这些skills到底有没有帮助

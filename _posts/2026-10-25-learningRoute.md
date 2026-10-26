@@ -7,6 +7,7 @@ tags: methodology java-full-stack agent-harnessing
 categories: technology-stack
 citation: true
 giscus_comments: true
+featured: true  # featured posts will be displayed on the homepage
 toc: 
   sidebar: left
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图

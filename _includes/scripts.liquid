@@ -168,6 +168,40 @@
     font-weight: bold;
     text-decoration: underline;
   }
+  /* Featured posts: force left-to-right card layout, match container width */
+  .featured-posts .row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 0 !important;
+  }
+  .featured-posts .row.row-cols-2 > .col {
+    width: 50% !important;
+    max-width: 50% !important;
+  }
+  .featured-posts .row.row-cols-3 > .col {
+    width: 33.333333% !important;
+    max-width: 33.333333% !important;
+  }
+  .featured-posts .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .featured-posts .card-body {
+    flex: 1 1 auto !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .featured-posts .card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
+  }
+  .featured-posts .col {
+    padding: 0 0.5rem !important;
+  }
 </style>
 
 <!-- Core navigation/runtime scripts -->
@@ -362,6 +396,17 @@
     window.afPageviews = { host: "{{ gc_host }}", key: "{{ gc_key }}", baseurl: "{{ site.baseurl }}" };
     (function () {
       var cfg = window.afPageviews;
+      var LS_KEY = "afpv:";
+      var now = Date.now();
+      var TTL = 1000 * 60 * 60 * 24 * 7; // 本地缓存 7 天，刷新即可立即显示
+
+      function normPath(p) {
+        if (cfg.baseurl && p.indexOf(cfg.baseurl) === 0) return p.slice(cfg.baseurl.length);
+        return p;
+      }
+      function render(el, n) {
+        el.innerHTML = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;&#128065;&nbsp;" + n + "&nbsp;views";
+      }
 
       // Report the pageview. Localhost / LAN addresses are skipped so local previews don't
       // pollute real numbers.
@@ -375,8 +420,22 @@
           fetch(hit, { keepalive: true, mode: "no-cors", credentials: "omit" }).catch(function () {});
         } catch (e) {}
       }
+
       var els = [].slice.call(document.querySelectorAll("[data-pv]"));
       if (!els.length || !cfg.key) return;
+
+      // 1. 先从本地缓存同步渲染，刷新后与页面其他内容同时显示
+      els.forEach(function (el) {
+        var p = normPath(el.getAttribute("data-pv") || window.location.pathname);
+        try {
+          var cached = JSON.parse(localStorage.getItem(LS_KEY + p));
+          if (cached && cached.t && now - cached.t < TTL && typeof cached.n === "number") {
+            render(el, cached.n);
+          }
+        } catch (e) {}
+      });
+
+      // 2. 后台拉取最新数据并更新（异步，不阻塞页面）
       var end = new Date();
       var start = new Date(end.getTime() - 1000 * 60 * 60 * 24 * 365 * 5);
       function iso(d) {
@@ -392,18 +451,19 @@
           return r.json();
         })
         .then(function (d) {
-          // GoatCounter stores paths with any trailing slash stripped, so index both forms.
           var map = {};
           ((d && d.hits) || []).forEach(function (h) {
             map[h.path] = h.count;
             map[h.path + "/"] = h.count;
           });
           els.forEach(function (el) {
-            var p = el.getAttribute("data-pv") || window.location.pathname;
+            var p = normPath(el.getAttribute("data-pv") || window.location.pathname);
             var n = map[p];
-            if (typeof n !== "number" && cfg.baseurl && p.indexOf(cfg.baseurl) === 0) n = map[p.slice(cfg.baseurl.length)];
             if (typeof n !== "number") n = 0;
-            el.innerHTML = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;&#128065;&nbsp;" + n + "&nbsp;views";
+            render(el, n);
+            try {
+              localStorage.setItem(LS_KEY + p, JSON.stringify({ n: n, t: now }));
+            } catch (e) {}
           });
         })
         .catch(function () {});
