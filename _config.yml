@@ -346,7 +346,7 @@ jekyll-archives:
       tags: "/blog/:type/:name/"
       categories: "/blog/:type/:name/"
 
-display_tags: ["software engineering", "agent harnessing", "job-application", "methodology"] # these tags will be displayed on the front page of your blog
+display_tags: ["java-full-stack", "agent-harnessing", "job-application", "methodology", "vibe-coding"] # these tags will be displayed on the front page of your blog
 display_categories: ["career-planning", "technology-stack"] # these categories will be displayed on the front page of your blog
 
 # -----------------------------------------------------------------------------
