@@ -42,6 +42,8 @@ toc:
     优化点1：字数精简，表达重点
 </div>
 
+简历上的项目/工作经历需要符合招聘方业务场景，太过于通用的话容易被简历挂 (比如针对一家跨境电商公司，做的项目就要和他们的业务相关，而不是很宽泛的什么技术因为HR不懂技术)，要往招聘方的业务上靠近。
+
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize2.png" class="img-fluid rounded z-depth-1" %}
@@ -51,18 +53,30 @@ toc:
     优化点2：结构化展示工作经历和项目
 </div>
 
-接上图。简历上的项目/工作经历需要符合招聘方业务场景，太过于通用的话容易被简历挂 (比如针对一家跨境电商公司，做的项目就要和他们的业务相关，而不是很宽泛的什么技术因为HR不懂技术)，要往招聘方的业务上靠近。
+[更真实](https://www.codefather.cn/course/1789178931875651586/section/1789181735260364802)：简历需要包装，但是是让人相信能力的包装
+* 项目更真实：
+  * 最好可以上线，提供网址&开源地址（但是必须确保网址可以访问，不然是减分项）
+  * 认真撰写项目的README.md文档，把项目的演示截图、主要功能、架构设计和关键实现细节写清楚 (也可以体现自己的文档编写能力)
+  * 也可以整理自己学习项目的笔记，记录自己在项目开发过程中的思考、过程和解决问题的方法，并提供文档地址
+  * 本地多次提交到github仓库，体现逐步完成项目的过程
+  * 简历中补充更多具体、细节的数据：比如完成某个功能所用的技术细节 (具体参数设置)、项目的运行环境 (服务器配置)、具体量化指标数值
+* 说自己写作能力强，就提供博客或文档地址
 
 <div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+    <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/cv/cv-optimize3.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/cv/trueQuestions.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
 <div class="caption">
     优化点3：增加真实性
 </div>
 
-更真实：简历需要包装，但是项目最好可以上线，提供网址/开源地址（但是必须确保网址可以访问，不然是减分项）；说自己写作能力强，就提供博客或文档地址。如上图所示。
+更有亮点：
+* 参考[计算机专业求职-项目准备方法](https://clementineyyy.github.io/blog/2026/progarmPrepare/)中section2 项目怎么改-改进项目部分，将自己优化的点写到简历上
+* 优化的角度：具体见该文章的[“如何挖掘项目亮点”](https://www.codefather.cn/course/1789178931875651586/section/1789181560999616514)部分
 
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
@@ -110,4 +124,5 @@ toc:
 # 参考文献
 1. [程序员鱼皮的找工作视频](https://www.bilibili.com/video/BV1LEQLYqEGT/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)
 2. [程序员鱼皮求职指南](https://www.codefather.cn/course/1899655354088226817?tabKey=info&contentType=text)
-3. [框框的简历教程](https://www.bilibili.com/video/BV1NL4y1878J/?spm_id_from=333.788.recommend_more_video.0&trackid=web_related_0.router-related-2479604-97qjn.1792376583863.443&vd_source=4969daf431801d632f64c5d68e1819ff)
+3. [程序员鱼皮的简历教程](https://www.codefather.cn/course/cv)
+4. [框框的简历教程](https://www.bilibili.com/video/BV1NL4y1878J/?spm_id_from=333.788.recommend_more_video.0&trackid=web_related_0.router-related-2479604-97qjn.1792376583863.443&vd_source=4969daf431801d632f64c5d68e1819ff)
