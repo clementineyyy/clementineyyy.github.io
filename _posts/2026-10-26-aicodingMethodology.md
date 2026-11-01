@@ -23,9 +23,9 @@ toc:
 * 关键是把架构、核心组件和设计原则想清楚，让AI去写代码、跑测试、修bug，人负责最初的设计和最终的验收&code review
 * ~~而不是像以前一样遇到需求，自己搜索资料、研究技术，陷入细节中，一边探索一边写代码实现，然后修补。人反而成为了工作流中的瓶颈，阻碍了AI写代码的速度，而且过程非常混乱~~
 * tips：
-  * 在设计阶段可以先和外部AI讨论方案 (或者使用codex的/plan计划模式)，最后输出文档给本地coding agent如codex、opencode，让它们读项目文档并执行，可以更省token
-  * 明确功能需求、设计软件架构和实现代码可以分别开一个对话，省token并避免长上下文压缩
-  * AI coding中文档很重要，包括软件功能需求文档、设计架构文档、specs.md和plan.md (大任务分解为小任务，明确任务的完成边界、如何测试)等，便于AI查看、约束AI以及人工审核确认review
+  * 在设计阶段可以先和外部AI讨论方案 (/grill-me或者使用codex的/plan计划模式)，最后输出文档给本地coding agent如codex、opencode，让它们读项目文档并执行，可以更省token
+  * 明确功能需求、设计软件架构和实现代码可以分别开一个会话session，省token并避免长上下文压缩$\rightarrow$不同会话session讨论的核心主旨不同
+  * AI coding中文档很重要，包括软件功能需求文档、设计架构文档、specs、plan (大任务分解为小任务，明确任务的完成边界、如何测试)等，便于AI查看、约束AI以及人工审核确认review
 
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
@@ -97,8 +97,19 @@ toc:
 * 试着把名词换成动词来描述交给AI的动作：比如把“做一份PPT”改成“在30分钟内，让一群忙碌的人信服一套关于事情前因后果的解释，并在不确定的情况下作出决策”，更能表达出用户对产出的需求
 * 让AI按照不同领域专家的方法研究任务，~~但是注意不要将该方法演变为角色扮演而并没有提升实际成果~~
 
+# Useful Skills
+## Matt Pocock Skills for vibe coding
+具体见[]()
+
+
+
+## Skills for coding agent
+1. /resume选择某次会话session。/rewind (codex desktop创建新分支或codex cli中双击esc，可以压缩上下文，因为直接cut context)只回退对话上下文，不会撤销Codex在此之后对代码文件所做的修改。也就是说，对话“穿越”回去了，但磁盘上的代码文件依然停留在最新状态
+2. 
+
 # 参考文献
 
 1. [AI可以帮你写代码，但帮不了你成为架构师](https://www.bilibili.com/video/BV1MPwuzbETf/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)
 2. [AI编程经验微信文章](https://mp.weixin.qq.com/s/w1x8_24ft41au-Q6Pc8uuA)
 3. [“大家用AI都太保守了！”Claude Code负责人：我的方法更有野心](https://mp.weixin.qq.com/s/DSkimaN8KLtSRI0UFNFaPA?scene=334)
+4. 

@@ -36,6 +36,10 @@ GitHub Actions是GitHub内置的自动化平台，允许你在代码仓库中直
 [菜鸟教程的Github Actions教程](https://www.runoob.com/git/github-actions.html)
 [Github Actions官方文档](https://docs.github.com/zh/actions)
 
+## Github CLI
+GitHub CLI并不取代Git，它恰恰是建立在Git之上的。当你需要在GitHub上围绕代码提交进行协作 (比如发起PR、评审代码)时gh命令就能提供比网页更流畅的终端体验。
+[Github CLI官方文档](https://docs.github.com/zh/github-cli)
+
 # 前置知识：Markdown
 简单看文档了解Markdown的基本语法和常用格式即可，主要用于编写文档、博客等文本内容。
 
