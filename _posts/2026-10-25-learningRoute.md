@@ -23,6 +23,7 @@ toc:
 ## 教程
 [菜鸟教程的Git教程](https://www.runoob.com/git/git-tutorial.html)
 [Git官方文档](https://git-scm.com/docs)
+[鱼皮的Git教程](https://www.codefather.cn/course/1789189862986850306/section/1789190804671012866)
 
 ## 文件路径
 * Git安装在C:\Program Files\Git下，可启动git-bash.exe和git-cmd.exe等程序

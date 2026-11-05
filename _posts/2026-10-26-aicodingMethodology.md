@@ -2,8 +2,8 @@
 layout: post
 title: AI coding方法论
 date: 2026-10-26 09:52:00
-description: 本文整理了AI编程/vibe coding的方法论和经验，以帮助读者更高效地使用AI进行编程和开发
-tags: methodology vibe-coding
+description: 本文整理了AI编程的方法论和经验，以帮助读者更高效地使用AI进行编程和开发
+tags: methodology ai-coding
 categories: technology-stack
 citation: true
 giscus_comments: true
@@ -13,13 +13,13 @@ toc:
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
 ---
 
-本文总结了AI编程/vibe coding的方法论和经验，既可以运用在日常AI coding实践中、提升个人能力，也可以用来准备面试提问。
+本文总结了AI编程的方法论和经验，既可以运用在日常AI coding实践中、提升个人能力，也可以用来准备面试提问。
 
 ---
 
 # 架构层面
 ## 核心主旨
-* 人设计并和AI讨论 (一开始设计好整个功能和结构如何实现，明确设计方案和约束)、完全交给AI实现 (需要向AI明确一系列编码规则和约束)、AI和人验收校验。
+* 人设计并和AI讨论 (一开始设计好整个功能和结构如何实现，明确设计方案和约束)、完全交给AI实现 (需要向AI明确一系列编码规则和约束)、AI和人验收校验 (可以在github issue中提QA，让AI自动领取issue并行解决$\rightarrow$工作流比如[sandcastle](https://github.com/mattpocock/sandcastle))。
 * 关键是把架构、核心组件和设计原则想清楚，让AI去写代码、跑测试、修bug，人负责最初的设计和最终的验收&code review
 * ~~而不是像以前一样遇到需求，自己搜索资料、研究技术，陷入细节中，一边探索一边写代码实现，然后修补。人反而成为了工作流中的瓶颈，阻碍了AI写代码的速度，而且过程非常混乱~~
 * tips：
@@ -37,12 +37,18 @@ toc:
 </div>
 
 ## insight
-* 代码本身就是提示词。清晰，可维护的代码，可以让AI更好地理解软件结构和意图，从而更好地vibe coding新功能，或者修改bug。
+* 代码本身就是提示词。清晰，可维护的代码，可以让AI更好地理解软件结构和意图，从而更好地开发新功能，或者修改bug。
 * 代码库越有秩序，AI带来的复利越强；代码库越混乱，AI制造技术债的速度越快。
 * AI只能延续架构，而不能创造架构。
 
 # 什么问题/情况下使用AI/LLM
-1. 使用场景：解决没有明确处理逻辑/无法用逻辑处理的fuzzy problem模糊问题，给LLM提示词让LLM完成任务[[2]](https://mp.weixin.qq.com/s/w1x8_24ft41au-Q6Pc8uuA)。
+1. 使用场景：
+  * 解决没有明确处理逻辑/无法用逻辑处理的fuzzy problem模糊问题，给LLM提示词让LLM完成任务[[2]](https://mp.weixin.qq.com/s/w1x8_24ft41au-Q6Pc8uuA)
+  * 用AI来解决人力太费时费力的问题：
+    * 将无结构的数据 (如文本等)转化为结构化的数据 (如表格、json等)，用来被进一步分析、可视化、研究[[3]](https://www.aihero.dev/what-are-llms-used-for) 
+    * 对数据分类/贴标签
+  * 非确定性系统：知识问答 (但是需要注意LLM的[Parametric Knowledge](https://www.aihero.dev/ai-coding-dictionary/parametric-knowledgehttps://www.aihero.dev/ai-coding-dictionary/parametric-knowledge)存在[Knowledge Cutoff](https://www.aihero.dev/ai-coding-dictionary/knowledge-cutoff)，而且需要引用外部数据源来提升回答准确度)、多模态生成、Agents操作外部事物
+  * 不应该使用AI：有明确处理逻辑、结果是决定性且明确的系统，不需要用AI来处理。
 2. 如何使用：不能直接将提示词&要求一股脑全部丢给LLM，这样效果并不好。
    * 先将大的模糊问题拆解成若干步骤。其中有明确处理方式的小步骤可以用逻辑&程序处理，是核心模糊问题的小步骤由LLM解决$\rightarrow$核心是<mark>(长)任务链拆分</mark>
    * 进阶：<mark>尝试不要直接得到产品，而是得到产生产品的工具</mark>，将抽象的生产产品的机制和产品具体内容分开 (类似于设计模式中的工厂方法模式和模板方法模式)。这样既可以避免在直接得到产品的过程中需要处理和考虑的细节问题，也可以简化单个任务的复杂度，让机制产出可以复用并反过来约束具体产品内容的生成
@@ -57,7 +63,7 @@ toc:
 </div>
 
 # AI编程规范
-1. 向AI强调不要写过度防御/异常处理/非法检测的代码
+1\. 向AI强调不要写过度防御/异常处理/非法检测的代码
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/aicoding/noDefend.png" class="img-fluid rounded z-depth-1" %}
@@ -66,10 +72,17 @@ toc:
 <div class="caption">
     拒绝过度防御的代码的原因
 </div>
-2. 
+
+2\. [明确定义成功标准](https://platform.claude.com/docs/en/test-and-evaluate/develop-tests)：
+  * 像软件需求分析中要求的一样，设置明确的、可量化、可达成的成功标准，拒绝AI产出概率结果
+  * 然后设置尽量自动化的、大量的[评估实验](https://www.aihero.dev/what-are-evals)，如用代码/人工/LLM评估：和科研类似，需要包含各种边界情况、数据具有代表性的数据集datasets
+  * data-driven mindset：用来自用户的数据反馈来提升AI-app的效果
 
 
 # AI coding提示词技巧
+## 避免AI阿谀奉承
+[解决办法](https://www.aihero.dev/ai-coding-dictionary/sycophancy)：隐藏个人取向。使用中立的提示词如“帮我review这段代码”而不是“这段代码好吗？”
+
 ## 给AI提出更有野心的目标
 ### 高度：提高任务的抽象层次
 关注最终想实现的结果，而不是一个个具体任务。
@@ -98,18 +111,22 @@ toc:
 * 让AI按照不同领域专家的方法研究任务，~~但是注意不要将该方法演变为角色扮演而并没有提升实际成果~~
 
 # Useful Skills
-## Matt Pocock Skills for vibe coding
-具体见[]()
+## Matt Pocock Skills for ai coding
+具体见我的博客[Matt Pocock Skills使用指南](https://clementineyyy.github.io/blog/2026/mattpocockSkills/)，~~已弃用[Superpowers Skills-固定工作流](https://github.com/obra/superpowers)，[原因](https://www.bilibili.com/video/BV1PsN36WE8x/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)：工作流由人决定，而非全权依赖AI或skills~~
 
 
 
 ## Skills for coding agent
 1. /resume选择某次会话session。/rewind (codex desktop创建新分支或codex cli中双击esc，可以压缩上下文，因为直接cut context)只回退对话上下文，不会撤销Codex在此之后对代码文件所做的修改。也就是说，对话“穿越”回去了，但磁盘上的代码文件依然停留在最新状态
-2. 
+
+
+# 如何改进LLM-based项目
+参考[matt pocock的AI Engineering教程-How to improve your LLM-powered app](https://www.aihero.dev/how-to-improve-your-llm-powered-app)
 
 # 参考文献
 
 1. [AI可以帮你写代码，但帮不了你成为架构师](https://www.bilibili.com/video/BV1MPwuzbETf/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)
 2. [AI编程经验微信文章](https://mp.weixin.qq.com/s/w1x8_24ft41au-Q6Pc8uuA)
 3. [“大家用AI都太保守了！”Claude Code负责人：我的方法更有野心](https://mp.weixin.qq.com/s/DSkimaN8KLtSRI0UFNFaPA?scene=334)
-4. 
+4. [matt pocock的AI Engineering教程-What are LLMs used for?](https://www.aihero.dev/what-are-llms-used-for)
+5. [matt pocock的AI Engineering教程-The AI Engineer Mindset](https://www.aihero.dev/the-ai-engineer-mindset)
