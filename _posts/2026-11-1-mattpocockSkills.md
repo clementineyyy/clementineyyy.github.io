@@ -9,7 +9,7 @@ citation: true
 giscus_comments: true
 toc: 
   sidebar: left
-# thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
+thumbnail: assets/img/mattpocockSkills/workflow.png   # 用于显示在文章列表中的缩略图
 ---
 
 本文总结了Matt Pocock开发的Skills的使用教程，便于读者进行高效的软件工程AI coding实践。Matt Pocock说过：“用任何skill之前都应该通读一遍”，所以读SKILL.md目前是有益的。
@@ -101,6 +101,11 @@ toc:
 * 实现细节：
   * 5个标签和状态：见~\docs\agents\triage-labels.md的映射表，将skill内部的规范canonical角色名翻译成实际issue tracker中使用的标签字符串 (用户可以创建自定义标签)
   * 状态转换规则在[仓库的~\skills\engineering\triage\SKILL.md的Roles部分最后](https://github.com/mattpocock/skills/blob/main/skills/engineering/triage/SKILL.md)
+
+## /code-review
+* 作用：/implement负责完成代码 (make it work)，/code-review负责重构/改进代码 (make it good)
+* 使用：coding standards不应该放在AGENTS.md文件中，而是应该另开一个CODING_STANDARDS.md文件来记录。因为AGENTS.md文件在每一个会话session中都会被agent读到，其中的内容可能会被implement agent忽略；而CODING_STANDARDS.md文件只会在/code-review agent中被读到，因此可以保证coding standards被严格遵守。
+
 
 
 # 参考文献

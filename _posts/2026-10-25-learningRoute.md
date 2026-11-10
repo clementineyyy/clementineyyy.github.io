@@ -25,6 +25,10 @@ toc:
 [Git官方文档](https://git-scm.com/docs)
 [鱼皮的Git教程](https://www.codefather.cn/course/1789189862986850306/section/1789190804671012866)
 
+## 常用命令
+将本地项目同步到远程Github仓库的命令见Github仓库初始化页面的指令教程 (注意在提交之前编辑好.gitignore文件，避免提交不必要/过大的文件到远程仓库)
+* git branch -M main：将当前分支重命名为main
+
 ## 文件路径
 * Git安装在C:\Program Files\Git下，可启动git-bash.exe和git-cmd.exe等程序
 * C:\Program Files\Git\etc\gitconfig文件：系统中对所有用户都普遍适用的配置。若使用git config时用--system选项，读写的就是这个文件
@@ -55,6 +59,10 @@ GitHub CLI并不取代Git，它恰恰是建立在Git之上的。当你需要在G
 
 
 # Part2: AI Agent & Harness Engineering
+## Propmt Engineering
+
+## Tools工具调用
+跳转到[我的工具调用学习笔记]()
 
 # 参考文献
 [AI应用开发路线B站视频](https://www.bilibili.com/video/BV1MnEa69EmU/?spm_id_from=333.788.videopod.sections&vd_source=4969daf431801d632f64c5d68e1819ff)
