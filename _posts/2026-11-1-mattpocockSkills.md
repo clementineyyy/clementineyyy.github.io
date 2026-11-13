@@ -77,9 +77,13 @@ thumbnail: assets/img/mattpocockSkills/workflow.png   # 用于显示在文章列
 4\. grilling阶段使用SOTA模型，利用它的参数来提出好的idea
 
 5\. 并行：开多个会话session，分别grilling (但不是grill同一个问题)，分以下几个应用场景：
-   * 两个方案对比：从不同的方向出发一起grill，最后出两个方案，选中哪个方案，就让哪个方案写context.md文件
-   * 方向定下来了，就是想grill加速进度，不想一直干等着它思考：比如一个问后端的设计，另一个做前端设计稿
-   * 两个不同的项目同时分不同会话session grill
+  * 两个方案对比：从不同的方向出发一起grill，最后出两个方案，选中哪个方案，就让哪个方案写context.md文件
+  * 方向定下来了，就是想grill加速进度，不想一直干等着它思考：比如一个问后端的设计，另一个做前端设计稿
+  * 两个不同的项目同时分不同会话session grill
+
+6\. 与其谈论“是什么”，不如多解释一些“为什么”：
+  * &#x274c;BAD: "I want to build an analytics panel for admins with graphs and filters" 如果首先解释你的解决方案，agent就会坚持这个方案并假定所有重要事项均已解决，并仅就实施细节向您提问。
+  * &#x2705;GOOD: "Admins can't currently see an overview of the important data in the app" 如果描述问题，agent就会变得更有创造力，可以得到更有深度、更好的对话
 
 
 ## /to-spec

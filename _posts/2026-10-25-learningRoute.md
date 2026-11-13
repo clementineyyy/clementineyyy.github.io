@@ -62,7 +62,7 @@ GitHub CLI并不取代Git，它恰恰是建立在Git之上的。当你需要在G
 ## Propmt Engineering
 
 ## Tools工具调用
-跳转到[我的工具调用学习笔记]()
+跳转到[我的工具调用学习笔记](https://clementineyyy.github.io/blog/2026/toolCalling/)
 
 # 参考文献
 [AI应用开发路线B站视频](https://www.bilibili.com/video/BV1MnEa69EmU/?spm_id_from=333.788.videopod.sections&vd_source=4969daf431801d632f64c5d68e1819ff)
