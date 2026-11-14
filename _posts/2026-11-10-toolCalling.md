@@ -31,13 +31,17 @@ toc:
 
 |  | Codex | Claude Code | Pi | Opencode | Deerflow |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 怎么暴露工具？ | 请求体tools字段存储模型直接可见的工具；若需要调用其他工具，则采用tool_search工具来搜索发现并保留工具定义在<u>input数组</u>中 | 请求体tools字段存储经规则过滤后模型可直接调用的工具；若需要调用其他工具，则采用<mark>延迟加载</mark>ToolSearchTool工具来搜索发现并将工具定义加入<u>请求体tools字段</u> | | | |
+| 怎么暴露工具？ | 请求体tools字段存储模型直接可见的工具；若需要调用其他工具，则采用tool_search工具来搜索发现并保留工具定义在<u>input数组</u>中 | 请求体tools字段存储经规则过滤后模型可直接调用的工具；若需要调用其他工具，则采用<mark>延迟加载</mark>ToolSearchTool工具来搜索发现并将工具定义加入<u>请求体tools字段</u> | 根据一系列规则筛选工具，将其与system message累计的历史增量做差分增量声明，与历史system message总结出完整工具列表供LLM调用；LLM可工具搜索发现system message之外的工具并将其加入toolsAdded和<u>system message</u>中 | | |
 
 ## Codex
 具体见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)
 
 ## Claude Code
 具体见[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)
+
+## Pi 
+具体见[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)
+
 
 
 # Further Questions
@@ -47,8 +51,8 @@ toc:
   * 占用大量上下文，导致上下文窗口不够，模型聪明程度降低
   * 工具选择准确率下降 (模型要在更长的清单里做匹配，注意力被稀释，选错、不选或“瞎选”的概率都会上升)
 * 业界做法：
-  * 渐进式披露Progressive Tool Exposure：初始只给模型看一个很小的“加载器Loader”工具集。模型在需要时，可以主动调用一个“加载更多工具”的元工具，来动态地把新的工具定义添加进当前的对话上下文中
-  * 工具检索Tool Retrieval：当工具库非常庞大 (例如数十上百个)时，会先用一个轻量级的检索步骤 (结合关键词BM25和语义Embeddings)，从全量工具库中筛选出最相关的Top-N候选工具 (例如20个)，然后再把这Top-N个工具的定义交给模型做最终选择
+  ~~* 渐进式披露Progressive Tool Exposure：初始只给模型看一个很小的“加载器Loader”工具集。模型在需要时，可以主动调用一个“加载更多工具”的元工具，来动态地把新的工具定义添加进当前的对话上下文中~~
+    * 工具检索Tool Retrieval：当工具库非常庞大 (例如数十上百个)时，会先用一个轻量级的检索步骤/检索工具 (结合关键词BM25和语义Embeddings)，从全量工具库中筛选出最相关的Top-N候选工具 (例如20个)，然后再把这Top-N个工具的定义交给模型做最终选择
 
 ## LLM如何根据提示词判断该调用哪个工具？
 
