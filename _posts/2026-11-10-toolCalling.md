@@ -3,7 +3,7 @@ layout: post
 title: 工具调用学习笔记
 date: 2026-11-10 21:18:00
 description: 本文整理了agent harness中工具调用的学习笔记。
-tags: methodology agent-harnessing
+tags: agent-harnessing
 categories: technology-stack
 citation: true
 giscus_comments: true
@@ -31,11 +31,13 @@ toc:
 
 |  | Codex | Claude Code | Pi | Opencode | Deerflow |
 |:---:|:---:|:---:|:---:|:---:|:---:|
-| 怎么暴露工具？ | | | | | |
+| 怎么暴露工具？ | 请求体tools字段存储模型直接可见的工具；若需要调用其他工具，则采用tool_search工具来搜索发现并保留工具定义在<u>input数组</u>中 | 请求体tools字段存储经规则过滤后模型可直接调用的工具；若需要调用其他工具，则采用<mark>延迟加载</mark>ToolSearchTool工具来搜索发现并将工具定义加入<u>请求体tools字段</u> | | | |
 
 ## Codex
-具体见[]()
+具体见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)
 
+## Claude Code
+具体见[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)
 
 
 # Further Questions

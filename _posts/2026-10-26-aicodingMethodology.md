@@ -26,6 +26,7 @@ toc:
   * 在设计阶段可以先和外部AI讨论方案 (/grill-me或者使用codex的/plan计划模式)，最后输出文档给本地coding agent如codex、opencode，让它们读项目文档并执行，可以更省token
   * 明确功能需求、设计软件架构和实现代码可以分别开一个会话session，省token并避免长上下文压缩$\rightarrow$不同会话session讨论的核心主旨不同
   * AI coding中文档很重要，包括软件功能需求文档、设计架构文档、specs、plan (大任务分解为小任务，明确任务的完成边界、如何测试)等，便于AI查看、约束AI以及人工审核确认review
+  * 用思考能力强的模型制定方案，用运行速度快的模型执行方案，这样才能在有限的时间内得到成品而不是半成品
 
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
