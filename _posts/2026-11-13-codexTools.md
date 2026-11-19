@@ -31,7 +31,7 @@ toc:
 核心思想：并不是所有注册的工具都会直接发给模型，ToolExposure是一个开关：
   * Direct / DirectModelOnly → 模型一开口就能看
   * Deferred / DeferredModelOnly → 模型得先搜索才能发现
-  * CodeModeOnly / Hidden → 模型在普通对话中完全看不到
+  * CodeModeOnly / Hidden → 模型在普通对话中完全看不到，在[PTC/CodeMode](https://clementineyyy.github.io/blog/2026/toolCalling/)中被调用
 
 几种工具的区别和使用场景见下面的分析
 
@@ -56,7 +56,7 @@ toc:
 * 具体实现细节：文件：codex-rs/core/src/session/world_state.rs，line 61-77，什么是增量模式？$\rightarrow$不再每次turn都重新发完整工具列表，而是只在第一次发完整，之后只发增量 (新增/变更的工具)；如果工具没变，后续请求就不需要重复下发，这样可以节省token
 * 关于其他类型的工具：都只能在普通模式下被调用
   * Deferred/DeferredModelOnly工具不在初始工具列表里。但如果模型可见列表model_visible_specs里包含tool_search工具，那么模型可以先调用tool_search去搜索这些延迟工具，发现后再调用。这是一种<mark>按需搜索发现</mark>的机制，避免一次性把几百个工具都塞进prompt消耗token。适合工具数量庞大、大部分时间用不到的场景。(文件：codex-rs/core/src/tools/router.rs，line 211-245)
-  * CodeModeOnly：只在代码模式嵌套调用中可见，不在初始列表，不对普通对话模型暴露。这适合那些只应该在代码执行环境内部被调用、不应该直接暴露给模型主动调用的工具。(文件： codex-rs/core/src/tools/spec_plan.rs，line 702-730)
+  * CodeModeOnly：只在代码模式嵌套调用 ([PTC/CodeMode](https://clementineyyy.github.io/blog/2026/toolCalling/))中可见，不在初始列表，不对普通对话模型暴露。这适合那些只应该在代码执行环境内部被调用、不应该直接暴露给模型主动调用的工具。(文件： codex-rs/core/src/tools/spec_plan.rs，line 702-730)
   * Hidden：对模型完全不可见，模型无法直接调用，但它仍然被注册在ToolRegistry里，可被注册表分发 (比如作为某个父工具的子步骤、后台任务、或系统级内部操作)。它的存在是为了让工具能被调度和执行，而不需要模型知道它。适合系统级后台任务、父工具的子步骤、或不希望模型感知的内部操作
 
 ## Responses Lite协议 VS 普通协议
@@ -76,8 +76,8 @@ incremental_tools (是否增量模式)和use_responses_lite (是否使用Lite协
     codex默认工具调用步骤流程
 </div>
 
-* Responses Lite协议：工具定义不放在请求顶部tools字段 (tools字段始终为None)，而是作为一条role: "developer"的AdditionalTypes历史项塞进input数组。作用是符合OpenAI Responses Lite协议的要求。缺点是不支持并行工具调用，模型一次只能调用一个工具
-* 普通协议 (默认)：工具定义直接作为HTTP请求的顶级tools字段，一次性发给模型，每次请求都带上完整工具列表
+* Responses Lite协议：<mark>工具定义 (name、description、parameters等)</mark>不放在请求顶部tools字段 (tools字段始终为None)，而是作为一条role: "developer"的AdditionalTypes历史项塞进input数组。作用是符合OpenAI Responses Lite协议的要求。缺点是不支持并行工具调用，模型一次只能调用一个工具
+* 普通协议 (默认)：<mark>工具定义 (name、description、parameters等)</mark>直接作为HTTP请求的顶级tools字段，一次性发给模型，每次请求都带上完整工具列表
 
 ## tool_search工具搜索机制
 ### 使用条件
@@ -98,3 +98,18 @@ incremental_tools (是否增量模式)和use_responses_lite (是否使用Lite协
 
 ### 与Claude Code不同 {#diff}
 如果不使用tool_search，Claude Code的deferred工具直接出现在请求体中，依然可以被LLM调用
+
+# codex如何并行工具调用？
+ResponsesApiRequest请求中的parallel_tool_calls字段表示支持并行，模型自己决定一次回复里返回几个tool_calls (即是否并行)。但工具能否真正并行，还受每个工具的supports_parallel_tool_calls配置限制
+
+## 具体实现并行
+文件：codex-rs/core/src/tools/parallel.rs
+
+每个tool call被tokio::spawn成独立异步任务，在不同的tokio task里并发调度，通过一个RwLock做并发管控，执行完释放锁，后续工具可进入
+
+* 支持并行的工具：获取RwLock读锁；多个读锁可以同时存在，因此多个支持并行的工具可以真正并发执行
+* 不支持并行的工具：获取RwLock写锁；写锁是独占的，该工具运行期间会阻塞其他所有工具 (读或写)，实现串行化
+
+每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput或 CustomToolCallOutput，携带call_id关联之前的 FunctionCall。这些输出项被收集到input数组中 (不存在message和tool_result block的嵌套关系)，下一轮请求把整个input数组发回给模型。模型通过call_id把每个结果对应到之前的tool_call
+
+# MCP扩展

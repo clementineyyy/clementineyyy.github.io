@@ -43,17 +43,21 @@ toc:
 * AI只能延续架构，而不能创造架构。
 
 # 什么问题/情况下使用AI/LLM
-1. 使用场景：
+1\. 使用场景：
+   
   * 解决没有明确处理逻辑/无法用逻辑处理的fuzzy problem模糊问题，给LLM提示词让LLM完成任务[[2]](https://mp.weixin.qq.com/s/w1x8_24ft41au-Q6Pc8uuA)
   * 用AI来解决人力太费时费力的问题：
     * 将无结构的数据 (如文本等)转化为结构化的数据 (如表格、json等)，用来被进一步分析、可视化、研究[[3]](https://www.aihero.dev/what-are-llms-used-for) 
     * 对数据分类/贴标签
   * 非确定性系统：知识问答 (但是需要注意LLM的[Parametric Knowledge](https://www.aihero.dev/ai-coding-dictionary/parametric-knowledgehttps://www.aihero.dev/ai-coding-dictionary/parametric-knowledge)存在[Knowledge Cutoff](https://www.aihero.dev/ai-coding-dictionary/knowledge-cutoff)，而且需要引用外部数据源来提升回答准确度)、多模态生成、Agents操作外部事物
+
   * 不应该使用AI：有明确处理逻辑、结果是决定性且明确的系统，不需要用AI来处理。
-2. 如何使用：不能直接将提示词&要求一股脑全部丢给LLM，这样效果并不好。
+  
+2\. 如何使用：不能直接将提示词&要求一股脑全部丢给LLM，这样效果并不好。
    * 先将大的模糊问题拆解成若干步骤。其中有明确处理方式的小步骤可以用逻辑&程序处理，是核心模糊问题的小步骤由LLM解决$\rightarrow$核心是<mark>(长)任务链拆分</mark>
    * 进阶：<mark>尝试不要直接得到产品，而是得到产生产品的工具</mark>，将抽象的生产产品的机制和产品具体内容分开 (类似于设计模式中的工厂方法模式和模板方法模式)。这样既可以避免在直接得到产品的过程中需要处理和考虑的细节问题，也可以简化单个任务的复杂度，让机制产出可以复用并反过来约束具体产品内容的生成
-3. 好处：
+  
+3\. 好处：
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/aicoding/splitBenefits.png" class="img-fluid rounded z-depth-1" %}
@@ -115,7 +119,8 @@ toc:
 ## Matt Pocock Skills for ai coding
 具体见我的博客[Matt Pocock Skills使用指南](https://clementineyyy.github.io/blog/2026/mattpocockSkills/)，~~已弃用[Superpowers Skills-固定工作流](https://github.com/obra/superpowers)，[原因](https://www.bilibili.com/video/BV1PsN36WE8x/?spm_id_from=333.337.search-card.all.click&vd_source=4969daf431801d632f64c5d68e1819ff)：工作流由人决定，而非全权依赖AI或skills~~
 
-
+## 前端设计skill
+[UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)或者Anthropic官方的frontend-design Skill
 
 ## Skills for coding agent
 1. /resume选择某次会话session。/rewind (codex desktop创建新分支或codex cli中双击esc，可以压缩上下文，因为直接cut context)只回退对话上下文，不会撤销Codex在此之后对代码文件所做的修改。也就是说，对话“穿越”回去了，但磁盘上的代码文件依然停留在最新状态
@@ -131,3 +136,4 @@ toc:
 3. [“大家用AI都太保守了！”Claude Code负责人：我的方法更有野心](https://mp.weixin.qq.com/s/DSkimaN8KLtSRI0UFNFaPA?scene=334)
 4. [matt pocock的AI Engineering教程-What are LLMs used for?](https://www.aihero.dev/what-are-llms-used-for)
 5. [matt pocock的AI Engineering教程-The AI Engineer Mindset](https://www.aihero.dev/the-ai-engineer-mindset)
+6. [Java Guide推荐的skills](https://javaguide.cn/ai-coding/practices/programmer-essential-skills.html)
