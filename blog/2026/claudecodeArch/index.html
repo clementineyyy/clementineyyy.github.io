@@ -1,0 +1,622 @@
+<!DOCTYPE html> <html lang="en"> <head> <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> <meta http-equiv="X-UA-Compatible" content="IE=edge"> <title> Claude Code系统架构、上下文管理和记忆系统深入解析 | Xinlu Gu </title> <meta name="author" content="Xinlu Gu"> <meta name="description" content="本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。"> <meta name="keywords" content="blog, software engineering, agent harnessing"> <meta property="og:site_name" content="Xinlu Gu"> <meta property="og:type" content="article"> <meta property="og:title" content="Xinlu Gu | Claude Code系统架构、上下文管理和记忆系统深入解析"> <meta property="og:url" content="https://clementineyyy.github.io/blog/2026/claudecodeArch/"> <meta property="og:description" content="本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。"> <meta property="og:image" content="https://clementineyyy.github.io/assets/img/og-image.png"> <meta property="og:locale" content="en"> <meta name="twitter:card" content="summary"> <meta name="twitter:title" content="Claude Code系统架构、上下文管理和记忆系统深入解析"> <meta name="twitter:description" content="本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。"> <meta name="twitter:image" content="https://clementineyyy.github.io/assets/img/og-image.png"> <script type="application/ld+json">
+    {
+        "author":
+        {
+            "@type": "Person",
+            "name": "Xinlu Gu"
+        },
+        "url": "https://clementineyyy.github.io/blog/2026/claudecodeArch/",
+        "@type": "BlogPosting",
+        "description": "本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。",
+        "headline": "Claude Code系统架构、上下文管理和记忆系统深入解析",
+        
+        "sameAs": ["https://twitter.com/XL4coding","https://www.xiaohongshu.com/user/profile/6705142a000000001e00c5ac"],
+        
+        "name": "Xinlu Gu",
+        "@context": "https://schema.org"
+    }
+  </script> <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https:; connect-src 'self' https:;"> <style>
+  :root {
+    --max-content-width: 930px;
+  }
+</style> <link rel="stylesheet" href="/assets/css/tailwind.css?v=50c64c15cbb9fd1ce6056fdb8bcb4b62"> <link defer rel="stylesheet" href="/assets/css/tocbot.css" integrity="sha256-zTN0r+0OKaIv2xqeNNIYxNk0pWJ6+IqPGc1iDgVzWF0=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css" integrity="sha256-MVopmdyC2tYTiJ8wlktf0uh0v4NgT+vNdyVFepi7Q0c=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.5/css/academicons.min.css" integrity="sha256-SzrCOBJbGVFMahewkgjwnApaV2+av1DwMAA+/QGLyZw=" crossorigin="anonymous"> <link defer rel="stylesheet" href="https://cdn.jsdelivr.net/npm/scholar-icons@1.0.3/css/scholar-icons.css" integrity="sha256-VY3hHVj/hNX3fYG6wtbA6TcKJQl7+FthzGSyIB64klY=" crossorigin="anonymous"> <link defer rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons&amp;display=swap"> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-github.css?v=591dab5a4e56573bf4ef7fd332894c99" media="" id="highlight_theme_light"> <link rel="shortcut icon" href="/assets/img/shooky.jpg?v=675e5763be46c4d6d2613cab69b38101"> <link rel="apple-touch-icon" href="/assets/img/shooky.jpg?v=675e5763be46c4d6d2613cab69b38101"> <link rel="stylesheet" href="/assets/css/main.css?v=3116ba77db9ee1581d05bb3e86fbf7f1"> <link rel="canonical" href="https://clementineyyy.github.io/blog/2026/claudecodeArch/"> <script src="/assets/js/theme.js?v=5286c3e4c334d0ecb8fc0c40ff4fa7ec"></script> <link defer rel="stylesheet" href="/assets/css/jekyll-pygments-themes-native.css?v=5847e5ed4a4568527aa6cfab446049ca" media="none" id="highlight_theme_dark"> <script>
+    initTheme();
+  </script> </head> <body class="fixed-top-nav "> <header> <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top" role="navigation"> <div class="container"> <a class="navbar-brand title font-weight-lighter" href="/"> <span class="font-weight-bold">Xinlu</span> <span class="font-weight-bold">Gu</span> </a> <button class="navbar-toggler collapsed navbar-toggler-main" type="button" data-nav-toggle="navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar top-bar"></span> <span class="icon-bar middle-bar"></span> <span class="icon-bar bottom-bar"></span> </button> <div class="collapse navbar-collapse navbar-collapse-main" id="navbarNav"> <ul class="navbar-nav navbar-menu-list flex-nowrap"> <li class="nav-item "> <a class="nav-link" href="/">About </a> </li> <li class="nav-item active"> <a class="nav-link" href="/blog/">Blog </a> </li> <li class="nav-item "> <a class="nav-link" href="/projects/">Projects </a> </li> <li class="nav-item "> <a class="nav-link" href="/repositories/">Repositories </a> </li> <li class="nav-item "> <a class="nav-link" href="/cv/">CV </a> </li> <li class="nav-item"> <button id="search-toggle" type="button" title="Search" aria-label="Open search"> <span class="nav-link">ctrl k <i class="fa-solid fa-magnifying-glass"></i></span> </button> </li> <li class="toggle-container"> <button id="light-toggle" type="button" title="Change theme" aria-label="Change color theme"> <i class="fa-half-sun-moon" id="light-toggle-system"></i> <i class="fa-solid fa-moon" id="light-toggle-dark"></i> <i class="fa-solid fa-sun" id="light-toggle-light"></i> </button> </li> </ul> </div> </div> </nav> <progress id="progress" value="0"> <div class="progress-container"> <span class="progress-bar"></span> </div> </progress> </header> <div class="container mt-5" role="main"> <div class="row"> <div class="col-sm-3"> <nav id="toc-sidebar" class="sticky-top toc toc-sidebar" aria-label="Table of contents" data-toc-collapse="expanded" data-toc-collapse-depth=""></nav> </div> <div class="col-sm-9"> <div class="post"> <header class="post-header"> <h1 class="post-title">Claude Code系统架构、上下文管理和记忆系统深入解析</h1> <p class="post-meta"> Created on November 17, 2026 <span class="post-views" data-pv></span> </p> <p class="post-tags"> <a href="/blog/2026"> <i class="fa-solid fa-calendar fa-sm"></i> 2026 </a>   ·   <a href="/blog/tag/agent-harnessing"> <i class="fa-solid fa-hashtag fa-sm"></i> agent-harnessing</a>   ·   <a href="/blog/category/technology-stack"> <i class="fa-solid fa-tag fa-sm"></i> technology-stack</a> </p> </header> <article class="post-content"> <div id="markdown-content"> <p>本文整理了本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。其中所有代码参考位置均对应笔者fork仓库，而非项目原始仓库。</p> <hr> <h1 id="agent-loop系统核心主循环">Agent Loop系统核心主循环</h1> <p>文件：src/query.ts</p> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/ccloop-480.webp 480w,/assets/img/learningRoute/ccloop-800.webp 800w,/assets/img/learningRoute/ccloop-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/ccloop.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> claude code agent loop流程。注意，这不是传统意义上的ReAct Loop，而是Tool-use Loop。循环时由LLM每次看到当前的对话上下文后，自主判断“我现在应该读个文件”还是“我应该执行一条命令”还是“我可以回复用户了” </div> <p>loop的关键设计原则是不包含任何业务逻辑，它不知道怎么读文件、怎么改代码、怎么搜索，这些全是工具层的事。引擎层只做三件事：第一，协调，把用户输入、系统指令、历史对话拼在一起，发给大模型；第二，分发，大模型说”我要用某个工具”时，找到对应的工具并执行；第三，决策，根据大模型的返回决定是继续循环还是结束对话。这种设计的好处是：新增能力只需要新增一个工具，循环完全不用改</p> <h2 id="react-vs-tool-use-loop">ReAct VS Tool-use Loop</h2> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/react-480.webp 480w,/assets/img/learningRoute/react-800.webp 800w,/assets/img/learningRoute/react-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/react.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/toolUseLoop-480.webp 480w,/assets/img/learningRoute/toolUseLoop-800.webp 800w,/assets/img/learningRoute/toolUseLoop-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/toolUseLoop.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/reactVStooluse-480.webp 480w,/assets/img/learningRoute/reactVStooluse-800.webp 800w,/assets/img/learningRoute/reactVStooluse-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/reactVStooluse.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> ReAct和Tool-use Loop的区别 </div> <p>ReAct Loop: Thought-Action-Observation三步循环</p> <ul> <li>模型在每一轮都会先输出一段思考 (有显式的思考过程，引导模型一步步推理)，然后再选择一个工具调用，最后拿到工具调用结果；循环直到模型认为任务完成</li> <li>问题： <ul> <li>token浪费：每一轮都要输出一段Thought文本，这些文本要作为上下文的一部分发给API，占用了宝贵的上下文窗口、浪费token。对于编程Agent来说，一次任务可能循环50轮，每轮都写一段“我打算先读取……然后分析……”的思考过程，加起来就是好几万token的浪费</li> <li>应用层代码太复杂：你需要解析模型的输出，区分哪部分是Thought、哪部分是Action，然后提取Action调用工具，再把Observation拼回去。这个解析过程写起来很麻烦，而且很容易出bug，因为模型输出的格式不一定标准，一崩就全崩了</li> <li>ReAct是为推理能力有限的弱模型设计的：当大模型的推理能力不够强时，用显式的Thought来强迫它一步步思考是有意义的；但Claude Opus这种级别的模型，推理能力已经足够强了，它完全可以在内部完成推理，不需要在输出里显式写出每一步的思考过程</li> </ul> </li> </ul> <p>Tool-use Loop：LLM外面没有强制思考，信任模型的推理能力，保持应用层框架尽可能简单</p> <ul> <li>模型在内部完成推理，不占用上下文空间，然后直接返回两种结果之一：tool_use工具调用和end_turn返回结果给用户</li> <li>好处：</li> </ul> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/benefit-480.webp 480w,/assets/img/learningRoute/benefit-800.webp 800w,/assets/img/learningRoute/benefit-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/benefit.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> claude code使用Tool-use Loop的好处 </div> <h2 id="plan-mode">Plan Mode</h2> <p>Tool-use Loop是边想边做，缺点在于浪费模型的精力而且容易跑偏</p> <p>Plan Mode是一个更精细的两阶段工作流：复杂任务先规划、再执行，避免方向跑偏、浪费精力；它并不是一个独立的框架，而是在同一个Tool-Use Loop中通过EnterPlanMode和ExitPlanMode两个工具实现的</p> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/planmode-480.webp 480w,/assets/img/learningRoute/planmode-800.webp 800w,/assets/img/learningRoute/planmode-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/planmode.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> Plan Mode的工作流程 </div> <h1 id="上下文管理">上下文管理</h1> <h2 id="上下文里有什么">上下文里有什么</h2> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/content-480.webp 480w,/assets/img/learningRoute/content-800.webp 800w,/assets/img/learningRoute/content-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/content.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> claude code上下文里有什么 </div> <h1 id="记忆系统">记忆系统</h1> <h2 id="整体结构多层文件化记忆系统">整体结构：多层文件化记忆系统</h2> <p>核心不是“把内容记住”，而是“把不同生命周期、不同作用域、不同可见性的内容分开保存”，每一层各自有独立目录、独立prompt、独立更新策略</p> <ol> <li>Auto Memory通用持久记忆层：面向整个用户和项目协作过程的长期记忆，存放在统一memory目录中</li> <li>Session Memory当前会话摘要层：面向当前会话的摘要文件，目标是辅助compact和长会话稳定持续运行</li> <li>Agent Memory面向某个agent类型的持久记忆，和agent定义直接绑定</li> <li>Team Memory面向团队共享的repo级知识同步</li> <li>好处： <ul> <li>透明：所有memory都是文件，用户可以直接打开目录检查、编辑、删除markdown文件，agent运行期也可以随时读写更新</li> <li>可治理：不同memory可以单独开关、单独同步、单独约束</li> <li>可组合：Auto/Session/Agent/Team Memory每一层可以同时存在，但职责不同</li> </ul> </li> <li>坏处： <ul> <li>需要治理：错误记忆、过时记忆、重复记忆都会持续污染后续agent行为</li> <li>路径和权限逻辑变复杂：user/project/local/remote mount都要分别处理</li> <li>prompt构造更重：MEMORY.md每次都要参与prompt生成，虽然有截断保护，但仍有成本</li> <li>需要模型遵守写入规范：系统已经做了不少规则约束，但最终仍依赖agent正确维护索引和文件</li> </ul> </li> </ol> <h2 id="记什么4种记忆分类">记什么：4种记忆分类</h2> <p>只有这4种分类，不能添加新分类；也不存在通用的any类型，避免无约束的记忆迅速膨胀成垃圾堆；逼agent做分类决策，必须考虑清楚每一条记忆属于哪一类</p> <ol> <li>User用户画像 (角色、偏好、知识水平)：比如用户说“我是一个写了十年Go的后端工程师，第一次接触React”，agent就应该在解释前端概念时用后端的类比，而不是从零讲起。这类记忆让agent的回答因人而异，而不是千篇一律</li> <li>Feedback行为反馈 (该做什么、不该做什么)：记住用户说过”不要做什么”和”做得好继续保持”。这类记忆的关键在于，它不仅记规则本身，还要求记录Why为什么和How to apply怎么应用 (因为当遇到边缘情况的时候，agent需要根据Why和How来判断这条规则在这个场景下是否适用；否则只是盲目遵守，太死板、不会灵活变通、在不该用的场景也强行套用规则)</li> <li>Project项目动态 (在做什么、截止日期、协作信息、有什么重要决策)：特殊要求是必须把相对日期 (比如周四)转成绝对日期 (具体到明确的年月日)</li> <li>Reference外部指针 (去哪能找到什么信息)：价值在于，agent不需要知道外部系统的具体内容，只需要知道去哪里找</li> </ol> <p>明确规定不记什么：核心原则：可以从当前代码推导出来的信息，一律不存 (因为代码随时在改变，而记忆没这么灵活)</p> <ul> <li>代码模式、项目架构和文件结构：因为这些信息通过grep、git、CLAUDE.md就能获取，而且常常发生修改，存在记忆里反而会导致记忆和代码实际状态不一致，并且加重了记忆负担</li> <li>Git历史和最近的改动：git log和git blame才是权威来源，不需要记忆系统再来存一遍</li> <li>调试方案和修复方法也不记忆：因为修复已经在代码里了，commit消息已经记录了上下文</li> <li>CLAUDE.md里已经写了的内容也不存，避免重复</li> <li>临时任务状态和当前对话上下文：这些是会话级的信息，不需要跨会话保持</li> </ul> <h2 id="怎么记底层存储逻辑文件夹memorymd索引">怎么记/底层存储逻辑：文件夹+MEMORY.md索引</h2> <p>系统把MEMORY.md当成入口索引文件，而不是正文存储文件</p> <p>设计意图的好处：</p> <ul> <li>每条memory单独写成一个markdown文件，独立文件存储每条记忆；文件开头有一段YAML格式的元信息 (可以理解为这条记忆的身份证)包括： <ul> <li>name是人类可读的标识</li> <li>description是一句话摘要，专门用于检索时的相关性匹配</li> <li>type标记四类型之一： user/feedback/project/reference</li> </ul> </li> <li>MEMORY.md是一个不超过200行并且小于25KB的轻量目录，只维护索引链接和一行描述</li> <li>agent/model在prompt里默认只保证看到MEMORY.md (始终加载到system prompt中)</li> <li>需要更细节时，再去读具体memory文件 (按需加载独立记忆文件)</li> </ul> <p>这比把所有记忆堆在一个大文件里更稳，因为大文件很容易造成：prompt爆炸、占满上下文窗口、更新冲突、历史垃圾无法治理、单条错误记忆污染整份上下文</p> <h2 id="记忆是怎么沉淀下来的">记忆是怎么沉淀下来的？</h2> <h3 id="auto-memory">Auto Memory</h3> <p>包括用户长期偏好、项目外部上下文、非代码内生知识、需要跨会话延续的协作约束。</p> <p>Auto Memory的更新不是靠当前主线程agent每次都手动完成，而是在每轮对话结束后由后台提取流程extractMemories读取新消息并主动写入md记忆文件：复用主对话的同一个大模型（forked agent），通过运行一个子agent查询循环来读取最近消息并写入记忆文件</p> <h3 id="session-memory">Session Memory</h3> <p>记忆条件：触发条件才记忆</p> <ul> <li>会话没长到一定程度，不启用Session Memory (minimumMessageTokensToInit = 10000)</li> <li>即便已经启用，也不会每轮都更新 (minimumTokensBetweenUpdate = 5000)</li> <li>工具调用次数和token增长都要参与判断 (toolCallsBetweenUpdates = 3)</li> </ul> <p>沉淀方式：注册registerPostSamplingHook，fork一个沙箱化subagent去做摘要。这个subagent权限只有FileEditTool，且只能操作一个精确路径 (createMemoryFileCanUseTool会deny所有其他工具包括FileReadTool/FileWriteTool)</p> <h3 id="agent-memory">Agent Memory</h3> <p>它不是检索外挂，而是直接改变agent下一次的system prompt起点：agent工作中发现需要记住的信息$\rightarrow$先读MEMORY.md或已有memory文件$\rightarrow$新增/更新memory$\rightarrow$维护MEMORY.md索引$\rightarrow$下次调用同一agent时再次读取同一目录的MEMORY.md文件</p> <p>主要包含3种信息：</p> <ul> <li>user：跨项目复用的agent长期记忆</li> <li>project：当前项目内共享的agent记忆</li> <li>local：当前项目、当前机器或当前挂载环境的本地agent记忆</li> </ul> <p>沉淀方式：agent运行期间，主agent按自身system prompt的保存指令，调用Write/Edit写入MEMORY.md或主题文件</p> <h4 id="如何加载记忆">如何加载记忆？</h4> <p>只要agent定义里带了memory字段，系统都会做两件事：</p> <ul> <li>自动把memory prompt拼接到agent system prompt后面 (所以agent从第一轮开始就知道：自己的memory目录在哪里、该怎么写memory、MEMORY.md当前有哪些索引；loadAgentMemoryPrompt()加载agent memory prompt)</li> <li>自动把Write/Edit/Read三个文件工具注入到agent的工具列表里</li> </ul> <p>这两步缺一不可：</p> <ul> <li>如果只注入prompt，不注入文件工具，agent看得到规则却没法落盘&amp;实际操作</li> <li>如果只注入文件工具，不注入prompt，agent有写权限却不知道memory的目录和治理方式</li> </ul> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/memoryTool-480.webp 480w,/assets/img/learningRoute/memoryTool-800.webp 800w,/assets/img/learningRoute/memoryTool-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/memoryTool.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/agentMemory-480.webp 480w,/assets/img/learningRoute/agentMemory-800.webp 800w,/assets/img/learningRoute/agentMemory-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/agentMemory.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> Agent Memory的沉淀方式：将memory的设置和工具暴露联系起来；agent memory的典型使用流程 </div> <h4 id="agent-memory-snapshot">Agent Memory Snapshot</h4> <p>snapshot的初始化/更新发生在agent定义加载时</p> <p>为什么snapshot很重要：因为它把agent memory从“运行时副产物”提升成了“可分发的角色资产”。也就是说，一个项目可以不仅定义agent的prompt，还能一起下发，随项目一起发布和升级：</p> <ul> <li>这个agent的初始记忆结构</li> <li>这个agent已经积累好的协作经验</li> <li>这个agent的更新版本</li> </ul> <p>这比单纯shipping一个prompt.md更强，因为：</p> <ul> <li>它允许项目把agent逐步养成熟：把agent memory从“运行时副产物”提升为“可分发的角色资产”，可随项目一起发布和升级</li> <li>零成本初始化：新环境或新agent实例可以直接从snapshot获得已有记忆结构，不用从零开始养agent</li> <li>可升级：团队可以给agent memory打版本，本地检测到新版本后提示prompt-update，实现记忆结构的滚动升级</li> <li>解耦会话：记忆不再绑定单次会话，而是绑定agent类型，支持跨会话、跨项目的长期积累</li> </ul> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/snapshot-480.webp 480w,/assets/img/learningRoute/snapshot-800.webp 800w,/assets/img/learningRoute/snapshot-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/snapshot.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> agent memory snapshot的触发条件和处理函数 </div> <h3 id="team-memory">Team Memory</h3> <h2 id="记忆怎么进入提示词怎么召回">记忆怎么进入提示词？怎么召回？</h2> <p>Relevant Memory Recall：不是把所有历史记忆都塞进prompt，而是做选择，从几十条记忆里挑出最相关的那几条加载进来</p> <p>做法：用一个廉价的小模型Sonnet来做记忆检索</p> <p>step1. 扫描所有记忆文件 (按修改时间倒序，最多扫描200个文件)的头部信息：只读每个文件的前30行，即frontmatter区域，不读全文；提取文件开头元信息里的name、description、type step2. 所有记忆的头部信息被拼成一个文本清单 (每一行包括[type记忆类型]记忆markdown文件名 (日期))，连同用户提示词一起发给小模型做选择，小模型返回的只是一个文件名列表 (比如[“feedback_no_mock.md”, “project_auth.md”])，不是记忆内容本身 step3. 加载选中记忆的完整内容，作为&lt;system-reminder&gt;注入上下文</p> <h3 id="细节">细节</h3> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/outdate-480.webp 480w,/assets/img/learningRoute/outdate-800.webp 800w,/assets/img/learningRoute/outdate-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/outdate.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> 记忆召回时的处理细节 </div> <p>如果用户当前正在使用某些工具 (比如正在调用某个MCP工具)，小模型会自动过滤掉该工具的使用文档类记忆，因为模型已经在用这个工具了，它的用法文档此刻是噪声，不是信号；但该工具的已知bug和注意事项类记忆仍然会被选中，正在用的时候，恰恰是最需要知道坑在哪里的时候</p> <h3 id="性能优化记忆召回的执行时机">性能优化：记忆召回的执行时机</h3> <p>小模型侧查询不是在主模型需要时才触发的，而是在用户提交消息后立刻就开始了，和主模型的API调用并行执行；并且小模型比主模型快得多，所以等主模型响应返回时，记忆召回早就完成了，几乎不增加任何额外延迟</p> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/parallelMemo-480.webp 480w,/assets/img/learningRoute/parallelMemo-800.webp 800w,/assets/img/learningRoute/parallelMemo-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/parallelMemo.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> 记忆召回与主模型处理并行 </div> <h2 id="记忆压缩memory-compaction">记忆压缩Memory Compaction</h2> <p>为了避免模型的上下文超出上下文窗口大小，需要对记忆进行压缩，有手动/compact指令与自动阈值触发这两种方式</p> <div class="row mt-3"> <div class="col-12 mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/learningRoute/compact-480.webp 480w,/assets/img/learningRoute/compact-800.webp 800w,/assets/img/learningRoute/compact-1400.webp 1400w," type="image/webp" sizes="95vw"></source> <img src="/assets/img/learningRoute/compact.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="eager" onerror="this.onerror=null; document.querySelectorAll('.responsive-img-srcset').forEach(function (n) { n.remove(); });"> </picture> </figure> </div> </div> <div class="caption"> compact记忆压缩处理的细节 </div> <h1 id="参考文献">参考文献</h1> <ol> <li><a href="https://github.com/liuup/claude-code-analysis/tree/main" rel="external nofollow noopener" target="_blank">claude-code-analysis仓库</a></li> <li><a href="https://xiaolinnote.com/claudecode/source/cc_source.html" rel="external nofollow noopener" target="_blank">小林coding的Claude code源码解析</a></li> </ol> </div> </article> <br> <hr> <br> 如果您需要引用本文，请参考： <div class="language-bibtex highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">@article</span><span class="p">{</span><span class="nl">gu2026claude-code系统架构-上下文管理和记忆系统深入解析</span><span class="p">,</span>
+  <span class="na">title</span>   <span class="p">=</span> <span class="s">{Claude Code系统架构、上下文管理和记忆系统深入解析}</span><span class="p">,</span>
+  <span class="na">author</span>  <span class="p">=</span> <span class="s">{Gu, Xinlu}</span><span class="p">,</span>
+  <span class="na">journal</span> <span class="p">=</span> <span class="s">{Xinlu's Blog}</span><span class="p">,</span>
+  <span class="na">year</span>    <span class="p">=</span> <span class="s">{2026}</span><span class="p">,</span>
+  <span class="na">month</span>   <span class="p">=</span> <span class="s">{Nov}</span><span class="p">,</span>
+  <span class="na">url</span>     <span class="p">=</span> <span class="s">{https://clementineyyy.github.io/blog/2026/claudecodeArch/}</span>
+<span class="p">}</span>
+</code></pre></div></div> <br> <hr> <br> <h1 class="text-3xl font-semibold mb-4 mt-12" id="enjoy-reading">Enjoy Reading This Article?</h1> <p class="mb-2">Here are some more articles you might like to read next:</p> <ul class="list-disc pl-7 my-3 space-y-2 marker:text-[var(--global-theme-color)]"> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/loopContextMemory/">Agent Loop、上下文工程和记忆系统学习笔记</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/piTools/">Pi Agent工具调用源码深入解析</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/codexTools/">Codex工具调用源码深入解析</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/claudecodeTools/">Claude Code工具调用源码深入解析</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/toolCalling/">工具调用学习笔记</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/mattpocockSkills/">Matt Pocock Skills使用教程</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/harnessProgram/">AgentPortfolio：面向。。。。。。。。</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/progarmPrepare/">计算机专业求职-项目准备方法</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/aicodingMethodology/">AI coding方法论</a> </li> <li class="leading-relaxed"> <a class="underline decoration-1 hover:text-[var(--global-hover-color)]" href="/blog/2026/learningRoute/">AI应用工程师技术学习路线</a> </li> </ul> <div id="giscus_thread" style="max-width: 930px; margin: 0 auto;"> <br> <script>
+    (function setupGiscus() {
+      function determineGiscusTheme() {
+        var theme = localStorage.getItem("theme") || document.documentElement.getAttribute("data-theme") || "system";
+if (theme === "dark") return "dark";
+if (theme === "light") return "light";
+var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+return prefersDark ? "dark" : "light";
+
+      }
+
+      var giscusTheme = determineGiscusTheme();
+      var attrs = {
+        src: "https://giscus.app/client.js",
+        "data-repo": "clementineyyy/clementineyyy.github.io",
+        "data-repo-id": "R_kgDOU75PeA",
+        "data-category": "Announcements",
+        "data-category-id": "DIC_kwDOU75PeM4DH8dc",
+        "data-mapping": "title",
+        "data-strict": "1",
+        "data-reactions-enabled": "1",
+        "data-emit-metadata": "0",
+        "data-input-position": "bottom",
+        "data-theme": giscusTheme,
+        "data-lang": "en",
+        crossorigin: "anonymous",
+        async: true
+      };
+
+      var giscusScript = document.createElement("script");
+      Object.entries(attrs).forEach(function(entry) { giscusScript.setAttribute(entry[0], entry[1]); });
+      var host = document.getElementById("giscus_thread");
+      if (host) host.appendChild(giscusScript);
+    })();
+  </script> <noscript> Please enable JavaScript to view the <a href="http://giscus.app/?ref_noscript" rel="external nofollow noopener" target="_blank">comments powered by giscus.</a> </noscript> </div> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Xinlu Gu. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Last updated: November 19, 2026. </div> </footer> <script>
+  window.alFolio = {
+    compatBootstrap: false
+  };
+</script> <style>
+  .profile.float-right {
+    margin-top: -90px;
+  }
+  .profile .more-info {
+    text-align: center;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .profile .more-info p {
+    display: block;
+  }
+  .profile .social .contact-icons {
+    font-size: 2.5rem;
+  }
+  .profile .social .contact-icons a svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    vertical-align: middle;
+  }
+  .profile .social .contact-icons a svg image {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .profile .social .contact-icons a img {
+    width: 2.5rem;
+    height: 2.5rem;
+    vertical-align: middle;
+  }
+  .cv .card .list-group-item {
+    border: none !important;
+    list-style: none !important;
+  }
+  .cv .card {
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+  .cv .card .row {
+    border: 0 none !important;
+  }
+  .cv .card .date-column table,
+  .cv .card .date-column table * {
+    border: 0 none !important;
+  }
+  #experience + .card .date-column {
+    transform: translateX(-35px) translateY(-5px);
+  }
+  #education + .card .date-column {
+    transform: translateX(-20px) translateY(-5px);
+  }
+  #education + .card .col-xs-10 h6 {
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
+  }
+  #education + .card .col-xs-10 h6 a {
+    font-weight: bold !important;
+  }
+  #education + .card .items .item {
+    font-size: 1.1rem !important;
+  }
+  #education + .card .location {
+    font-size: 1.1rem !important;
+  }
+  #skills + .card .skill-item {
+    font-size: 1.1rem;
+  }
+  #languages + .card .language-item {
+    font-size: 1.1rem;
+  }
+  #interests + .card .interest-item {
+    font-size: 1.1rem;
+  }
+  #projects + .card .date-column {
+    transform: translateX(-15px) translateY(-5px);
+  }
+  #toc-sidebar {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  .toc { overflow-y: auto; }
+  .toc > .toc-list { overflow: hidden; position: relative; }
+  .toc > .toc-list li { list-style: none; }
+  .toc-list { margin: 0; padding-left: 10px; }
+  a.toc-link { color: currentColor; height: 100%; }
+  .is-collapsible { max-height: 1000px; overflow: hidden; transition: all 300ms ease-in-out; }
+  .is-collapsed { max-height: 0; }
+  .is-collapsed:has(:focus) { max-height: 1000px; }
+  .is-position-fixed { position: fixed !important; top: 0; }
+  .is-active-link { font-weight: 700; }
+
+  /* One continuous guide line at the level-1 left x. Drawing it on the list container
+     (instead of per-link ticks) makes it continuous and shared across all nesting levels. */
+  #toc-sidebar > .toc-list {
+    --toc-line-x: 0.8rem;
+    padding-left: var(--toc-line-x);
+  }
+  #toc-sidebar > .toc-list::before {
+    content: "";
+    position: absolute;
+    left: var(--toc-line-x);
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: color-mix(in srgb, var(--global-divider-color) 80%, transparent);
+  }
+  #toc-sidebar .toc-link::before,
+  #toc-sidebar .toc-link.is-active-link::before {
+    display: none;
+  }
+  #toc-sidebar .toc-link:hover { color: var(--global-hover-color); text-decoration: none; }
+  #toc-sidebar .toc-link.is-active-link { color: var(--global-theme-color); font-weight: 600; }
+  .giscus, .giscus-frame {
+    width: 100% !important;
+  }
+  .giscus-frame {
+    min-height: 300px;
+  }
+  .giscus, .giscus-frame {
+    width: 100% !important;
+  }
+  .giscus-frame {
+    min-height: 300px;
+  }
+  .giscus, .giscus-frame {
+    width: 100% !important;
+  }
+  .giscus-frame {
+    min-height: 300px;
+  }
+  .post-description {
+    font-size: 1.1rem !important;
+  }
+  .post-content h1 { font-size: 2rem; }
+  .post-content h2 { font-size: 1.75rem; }
+  .post-content h3 { font-size: 1.5rem; }
+  .post-content h4 { font-size: 1.25rem; }
+  .post-content h5 { font-size: 1rem; }
+  .post-content h6 { font-size: 0.875rem; }
+  .post-title { font-weight: bold !important; }
+  .post-content h1, .post-content h2, .post-content h3,
+  .post-content h4, .post-content h5, .post-content h6 { font-weight: bold !important; }
+  #related-posts h1, .related-posts h1, h1[class*="text-3xl"] {
+    font-size: 2rem !important;
+    font-weight: bold !important;
+  }
+  body {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 1.1rem;
+  }
+  h1, h2, h3, h4, h5, h6,
+  .navbar, .navbar-brand, .navbar .nav-link,
+  .header-bar h1, .header-bar h2,
+  .post-title, .card-title {
+    font-family: 'Roboto', sans-serif !important;
+  }
+  footer a {
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  /* Featured posts: force left-to-right card layout, match container width */
+  .featured-posts .row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 0 !important;
+  }
+  .featured-posts .row.row-cols-2 > .col {
+    width: 50% !important;
+    max-width: 50% !important;
+  }
+  .featured-posts .row.row-cols-3 > .col {
+    width: 33.333333% !important;
+    max-width: 33.333333% !important;
+  }
+  .featured-posts .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .featured-posts .card-body {
+    flex: 1 1 auto !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .featured-posts .card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
+  }
+  .featured-posts .col {
+    padding: 0 0.5rem !important;
+  }
+</style> <script src="/assets/js/nav-toggle.js?v=141bd79a73ebc0f0b6ea58e440ae79fc"></script> <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script> <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@5.0.0/imagesloaded.pkgd.min.js" integrity="sha256-htrLFfZJ6v5udOG+3kNLINIKh2gvoKqwEhHYfTTMICc=" crossorigin="anonymous"></script> <script defer src="/assets/js/masonry.js?v=e49affc7bd2646f6acdad1dbe02c2359" type="text/javascript"></script> <script>
+    
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(function () {
+        if (!window.tocbot || typeof window.tocbot.init !== "function") return;
+        if (typeof window.tocbot.destroy === "function") window.tocbot.destroy();
+        window.tocbot.init({
+          tocSelector: "#toc-sidebar",
+          contentSelector: '[role="main"]',
+          headingSelector: "h1, h2, h3",
+          ignoreSelector: "[data-toc-skip], .post-title",
+          hasInnerContainers: true,
+          collapseDepth: 1,
+          orderedList: false,
+          activeLinkClass: "is-active-link",
+          scrollSmooth: true,
+          scrollSmoothOffset: -80,
+          headingsOffset: 80,
+        });
+      }, 0);
+    });
+  </script> <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script> <script src="/assets/al_math/js/mathjax-setup.js"></script> <script src="/assets/js/tooltips-setup.js?v=fe487e99db6c43751e6e7bdb2d6a0611"></script> <script defer src="/assets/js/tocbot.min.js?v=8c4124247831b8eb790b488402d8319f"></script> <script src="/assets/js/no_defer.js?v=53b1b1a645525975c963ce8bf8bfefcf"></script> <script defer src="/assets/js/common.js?v=87baac90f765f2f3362dcf6aaf312a8a"></script> <script defer src="/assets/js/copy_code.js?v=c8a01c11a92744d44b093fc3bda915df" type="text/javascript"></script> <script defer src="/assets/js/jupyter_new_tab.js?v=896d254890d9b47f0281f63bfccf0dee"></script> <script defer src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js" integrity="sha256-ZgMyDAIYDYGxbcpJcfUnYwNevG/xi9OHKaR/8GK+jWc=" crossorigin="anonymous"></script> <script defer src="/assets/al_img_tools/js/zoom.js"></script> <script defer src="/assets/js/progress-bar.js?v=499464c5c63ced6cf7ad62509f1e2610" type="text/javascript"></script> <script src="https://cdn.jsdelivr.net/npm/vanilla-back-to-top@7.2.1/dist/vanilla-back-to-top.min.js" integrity="sha256-uMJJ3EoTyfRBoTbR+lrfu1uRQ87RZG8AR3cVNuQVeFg=" crossorigin="anonymous"></script> <script>
+    addBackToTop({
+      cornerOffset: 20
+    });
+  </script> <script type="module" src="/assets/al_search/js/search/ninja-keys.min.js"></script> <ninja-keys hidebreadcrumbs noautoloadmdicons placeholder="Type to start searching"></ninja-keys> <script src="/assets/al_search/js/search-setup.js"></script> <script>
+// get the ninja-keys element
+const ninja = document.querySelector('ninja-keys');
+
+// add the home and posts menu items
+ninja.data = [{
+    id: "nav-about",
+    title: "About",
+    section: "Navigation",
+    handler: () => {
+      window.location.href = "/";
+    },
+  },{id: "nav-blog",
+          title: "Blog",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/blog/";
+          },
+        },{id: "nav-projects",
+          title: "Projects",
+          description: "A growing collection of my hands-on projects.",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/projects/";
+          },
+        },{id: "nav-repositories",
+          title: "Repositories",
+          description: "This page lists the status of my GitHub account and my GitHub repositories.",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/repositories/";
+          },
+        },{id: "nav-cv",
+          title: "CV",
+          description: "Professional CV for Xinlu Gu.",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/cv/";
+          },
+        },{id: "post-agent-loop-上下文工程和记忆系统学习笔记",
+        
+          title: "Agent Loop、上下文工程和记忆系统学习笔记",
+        
+        description: "本文整理了agent harness中Agent Loop、上下文工程和记忆系统的学习笔记。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/loopContextMemory/";
+          
+        },
+      },{id: "post-claude-code系统架构-上下文管理和记忆系统深入解析",
+        
+          title: "Claude Code系统架构、上下文管理和记忆系统深入解析",
+        
+        description: "本文结合Claude Code源码，详细分析了Claude Code系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/claudecodeArch/";
+          
+        },
+      },{id: "post-pi-agent工具调用源码深入解析",
+        
+          title: "Pi Agent工具调用源码深入解析",
+        
+        description: "本文结合Pi源码，详细分析了Pi工具调用的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/piTools/";
+          
+        },
+      },{id: "post-codex工具调用源码深入解析",
+        
+          title: "Codex工具调用源码深入解析",
+        
+        description: "本文结合codex源码，详细分析了codex工具调用的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/codexTools/";
+          
+        },
+      },{id: "post-claude-code工具调用源码深入解析",
+        
+          title: "Claude Code工具调用源码深入解析",
+        
+        description: "本文结合Claude Code源码，详细分析了Claude Code工具调用的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/claudecodeTools/";
+          
+        },
+      },{id: "post-工具调用学习笔记",
+        
+          title: "工具调用学习笔记",
+        
+        description: "本文整理了agent harness中工具调用的学习笔记。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/toolCalling/";
+          
+        },
+      },{id: "post-matt-pocock-skills使用教程",
+        
+          title: "Matt Pocock Skills使用教程",
+        
+        description: "本文整理了Matt Pocock开发的Skills的使用教程，帮助读者理清如何高效使用这些Skills进行AI coding实践",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/mattpocockSkills/";
+          
+        },
+      },{id: "post-agentportfolio-面向",
+        
+          title: "AgentPortfolio：面向。。。。。。。。",
+        
+        description: "本文是作者开发的AgentPortfolio项目文档。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/harnessProgram/";
+          
+        },
+      },{id: "post-计算机专业求职-项目准备方法",
+        
+          title: "计算机专业求职-项目准备方法",
+        
+        description: "本文整理了计算机专业求职中项目的准备方法，帮助求职者更好地展示自己的项目经验和能力。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/progarmPrepare/";
+          
+        },
+      },{id: "post-ai-coding方法论",
+        
+          title: "AI coding方法论",
+        
+        description: "本文整理了AI编程的方法论和经验，以帮助读者更高效地使用AI进行编程和开发",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/aicodingMethodology/";
+          
+        },
+      },{id: "post-ai应用工程师技术学习路线",
+        
+          title: "AI应用工程师技术学习路线",
+        
+        description: "本文整理了AI应用工程师的技术学习路线，主要包括AI Agent + Harness Engineering和Java全栈 (后端为主)两个子方向，先广度再深度确定学习路径以实现快速高效学习",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/learningRoute/";
+          
+        },
+      },{id: "post-计算机专业求职-简历撰写方法",
+        
+          title: "计算机专业求职-简历撰写方法",
+        
+        description: "本文整理了计算机专业撰写简历的方法和技巧，以提升投递命中率",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/cvWriting/";
+          
+        },
+      },{id: "post-计算机专业求职-岗位信息",
+        
+          title: "计算机专业求职-岗位信息",
+        
+        description: "本文整理了计算机专业可投递的各大岗位信息，以便根据实际情况选择offer。PS. 海投 &amp; 广投依然是必不可少的前提",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/jobInfo/";
+          
+        },
+      },{id: "post-计算机专业求职-公司信息",
+        
+          title: "计算机专业求职-公司信息",
+        
+        description: "本文整理了计算机专业可就职的各大公司信息，以便根据实际情况选择offer。PS. 海投 &amp; 广投依然是必不可少的前提",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/companyInfo/";
+          
+        },
+      },{id: "post-计算机专业求职-流程",
+        
+          title: "计算机专业求职-流程",
+        
+        description: "本文整理了计算机专业求职的完整流程，包括确定就业方向、准备简历&amp;面试、offer选择等环节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/jobRoutine/";
+          
+        },
+      },{id: "news-i-create-my-blog-website-and-let-39-s-start-the-journey",
+          title: 'I create my blog website and let&amp;#39;s start the journey!',
+          description: "",
+          section: "News",},{
+        id: 'social-email',
+        title: 'email',
+        section: 'Socials',
+        handler: () => {
+          window.open("mailto:%78%69%6E%6C%75%67%75%37%37%37@%67%6D%61%69%6C.%63%6F%6D", "_blank");
+        },
+      },{
+        id: 'social-x',
+        title: 'X',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://twitter.com/XL4coding", "_blank");
+        },
+      },{
+        id: 'social-xiaohongshu',
+        title: 'Xiaohongshu',
+        section: 'Socials',
+        handler: () => {
+          window.open("https://www.xiaohongshu.com/user/profile/6705142a000000001e00c5ac", "_blank");
+        },
+      },{
+      id: 'light-theme',
+      title: 'Change theme to light',
+      description: 'Change the theme of the site to Light',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("light");
+      },
+    },
+    {
+      id: 'dark-theme',
+      title: 'Change theme to dark',
+      description: 'Change the theme of the site to Dark',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("dark");
+      },
+    },
+    {
+      id: 'system-theme',
+      title: 'Use system default theme',
+      description: 'Change the theme of the site to System Default',
+      section: 'Theme',
+      handler: () => {
+        setThemeSetting("system");
+      },
+    },];
+
+</script> <script src="/assets/al_search/js/shortcut-key.js"></script> <script>
+    window.afPageviews = { host: "clementineyyy.goatcounter.com", key: "1guabtz7e8ptq1oems3dpuqi88fdoryrtw6o0y119zxf1uc0jmz", baseurl: "" };
+    (function () {
+      var cfg = window.afPageviews;
+      var LS_KEY = "afpv:";
+      var now = Date.now();
+      var TTL = 1000 * 60 * 60 * 24 * 7; // 本地缓存 7 天，刷新即可立即显示
+
+      function normPath(p) {
+        if (cfg.baseurl && p.indexOf(cfg.baseurl) === 0) return p.slice(cfg.baseurl.length);
+        return p;
+      }
+      function render(el, n) {
+        el.innerHTML = "&nbsp;&nbsp;&middot;&nbsp;&nbsp;&#128065;&nbsp;" + n + "&nbsp;views";
+      }
+
+      // Report the pageview. Localhost / LAN addresses are skipped so local previews don't
+      // pollute real numbers.
+      if (!/(^localhost$|^127\.|^10\.|^192\.168\.)/.test(window.location.hostname)) {
+        var hit =
+          "https://" + cfg.host + "/count?p=" + encodeURIComponent(window.location.pathname) +
+          "&t=" + encodeURIComponent(document.title) +
+          "&s=" + window.screen.width +
+          "&rnd=" + Math.random().toString(36).substr(2, 5);
+        try {
+          fetch(hit, { keepalive: true, mode: "no-cors", credentials: "omit" }).catch(function () {});
+        } catch (e) {}
+      }
+
+      var els = [].slice.call(document.querySelectorAll("[data-pv]"));
+      if (!els.length || !cfg.key) return;
+
+      // 1. 先从本地缓存同步渲染，刷新后与页面其他内容同时显示
+      els.forEach(function (el) {
+        var p = normPath(el.getAttribute("data-pv") || window.location.pathname);
+        try {
+          var cached = JSON.parse(localStorage.getItem(LS_KEY + p));
+          if (cached && cached.t && now - cached.t < TTL && typeof cached.n === "number") {
+            render(el, cached.n);
+          }
+        } catch (e) {}
+      });
+
+      // 2. 后台拉取最新数据并更新（异步，不阻塞页面）
+      var end = new Date();
+      var start = new Date(end.getTime() - 1000 * 60 * 60 * 24 * 365 * 5);
+      function iso(d) {
+        return d.toISOString().slice(0, 13) + ":00:00Z";
+      }
+      var url =
+        "https://" + cfg.host + "/api/v0/stats/hits?path_by_name=true&limit=500" +
+        "&start=" + encodeURIComponent(iso(start)) +
+        "&end=" + encodeURIComponent(iso(end));
+      fetch(url, { headers: { Authorization: "Bearer " + cfg.key } })
+        .then(function (r) {
+          if (!r.ok) throw new Error("gc " + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          var map = {};
+          ((d && d.hits) || []).forEach(function (h) {
+            map[h.path] = h.count;
+            map[h.path + "/"] = h.count;
+          });
+          els.forEach(function (el) {
+            var p = normPath(el.getAttribute("data-pv") || window.location.pathname);
+            var n = map[p];
+            if (typeof n !== "number") n = 0;
+            render(el, n);
+            try {
+              localStorage.setItem(LS_KEY + p, JSON.stringify({ n: n, t: now }));
+            } catch (e) {}
+          });
+        })
+        .catch(function () {});
+    })();
+  </script> </body> </html>
