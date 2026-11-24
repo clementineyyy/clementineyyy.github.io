@@ -44,6 +44,7 @@ toc:
 
 
 # 工具如何暴露给LLM？
+
 * 传统做法：全量注入，每次请求都会将所有工具定义序列化成文本，全量塞入每次请求。缺点：
   * token爆炸 (每轮对话固定多出几千token的开销)，成本增加
   * 占用大量上下文，导致上下文窗口不够，模型聪明程度降低
@@ -67,6 +68,8 @@ toc:
 # LLM如何判断是否调用工具、调用哪个工具？
 见我的[Claude Code工具调用源码深入解析的如何判断是否调用工具、调用哪个工具部分](https://clementineyyy.github.io/blog/2026/claudecodeTools/)
 
+# 如何判断工具能否真正执行？
+见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)、[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)和[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)的对应部分
 
 # MCP扩展
 
@@ -75,23 +78,27 @@ toc:
 
 # 业界工具调用实践对比
 
-## 总结/TL;DR
-
 相同点：
-* 工具定义可见范围：LLM都会看到<mark>工具定义 (仅包括名称、描述、参数)</mark>，这样才能写出包含name和parameters的tool_use block
+* 工具定义可见范围：LLM都会看到<mark>工具定义 (仅包括名称、描述、参数</mark>，由服务器端发给LLM)，这样才能写出包含name和parameters的tool_use block
 * 工具并行执行：客户端允许并行执行之后，模型自己决定要不要并行 (这只是决定模型能否在一次回复里输出多个tool_use，只是允许模型并发提出多个工具调用，并不代表客户端一定会同时执行它们)；模型输出多个tool_use后，客户端在真正执行前，还会查每个工具的是否允许并行字段/方法 (堵死了任意调用的后患)
+* LLM只能<mark>在上下文中看到工具调用结果</mark>，~~工具调用结果不是直接单独返回给LLM的~~
 
 |  | Codex | Claude Code | Pi |
 |:---:|:---:|:---:|:---:|
 | 怎么暴露工具？ | 请求体tools字段存储模型直接可见的工具；若需要调用其他工具，则采用tool_search工具来搜索发现并保留工具定义在<u>input数组</u>中 | 请求体tools字段存储经规则过滤后模型可直接调用的工具；若需要调用其他工具，则采用<mark>延迟加载</mark>ToolSearchTool工具来搜索发现并将工具定义加入<u>请求体tools字段</u> | 根据一系列规则筛选工具，将其与system message累计的历史增量做差分增量声明，与历史system message总结出完整工具列表供LLM调用；LLM可工具搜索发现system message之外的工具并将其加入toolsAdded和<u>system message</u>中 |
+| 决定是否调用工具、调用什么工具 | tool_choice参数+提示词+LLM自行判定 | tool_choice参数+提示词+LLM自行判定 | 提示词+LLM自行判定 |
+| 工具可见但拒绝执行的拦截机制 | Guardian策略审批和用户交互式审批 | hasPermissionsToUseTool：运行时权限检查 | 默认不实现beforeToolCall钩子接口，需要开发者自行实现；因此默认工具一旦可见，模型就能看到并生成调用 |
 | 工具并行执行的实现 | 实际由读写锁来控制 | 工具分成并行分组和串行分组，由Python中的asyncio.gather或JavaScript中的Promise.all来控制并行 | 任务调度器scheduler+allSettled连接策略等待全部完成才汇总返回+每个tool_call一个独立任务、独立运行 |
-| 工具调用结果返回形式 | 每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput追加到input数组后面返回给LLM (不会嵌套在一个返回消息中)；工具调用结果的顺序和工具调用请求的顺序保持一致 (FuturesOrdered保证) | <u>多个tool_result block存放在同一个message中</u>，添加到上下文后面返回给LLM；<u>工具调用结果的顺序和工具调用请求的顺序不必保持一致</u> | 工具调用结果按照toolCallId调用的顺序，独立追加在上下文后面 (不会嵌套在一个返回消息中)，即工具调用结果的顺序和工具调用请求的顺序保持一致 |
+| 工具调用结果返回截断方式 | 单个工具结果限制+单条消息聚合预算 (只针对元数据) | 单个工具结果限制+单条消息聚合预算 (针对完整工具调用结果) | 无 |
+| 工具调用结果返回截断持久化存储 | rollout保存到工具调用结果也经过截断，但比返回给LLM的截断规则更宽松 | transcript保留的工具调用结果和发给LLM的请求体记录的工具调用结果一致 | 无 | 
+| 工具调用结果返回形式 | 每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput追加到input数组后面返回给LLM (不会嵌套在一个返回消息中)；工具调用结果的顺序和工具调用请求的顺序保持一致 (FuturesOrdered保证) | <u>多个tool_result block存放在同一个message中</u>，添加到上下文后面返回给LLM；<u>工具调用结果的顺序和工具调用请求的顺序不必保持一致</u> | 工具调用结果按照toolCallId调用的顺序，独立追加在上下文后面 (不会嵌套在一个返回消息中)，即<u>工具调用结果的顺序和工具调用请求的顺序保持一致</u> |
 
 
 具体见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)、[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)和[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)
 
 # 进阶：程序化工具调用PTC
 本段落参考[Henry Li的文章](https://my.feishu.cn/wiki/CYANw7pSNiEhVckqaNXcCS8inAh)，并加以个人理解、分析、整理汇总
+
 
 ## 什么是PTC？
 <div class="row mt-3">
@@ -130,6 +137,9 @@ PTC流程：用程序编排工具调用
 ## 步骤
 1. [类似我的Ai Coding文章中的观点](https://clementineyyy.github.io/blog/2026/aicodingMethodology/#%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%E6%83%85%E5%86%B5%E4%B8%8B%E4%BD%BF%E7%94%A8aillm)：将大任务分解为若干个小任务，把可预测、有固定处理逻辑的部分交给代码完成
 2. PTC执行留下的轨迹/日志记录，作为RSI (Recursive Self-Improvement递归自我改进)的输入：先收集证据，再生成候选改动 (比如合并经常一起出现、输入输出边界相同且稳定的代码为一个工具)，使用历史输入回放，最后用evals和小范围发布确认改动提升了质量
+
+## 参考架构
+pi-codemode
 
 
 # Further Questions

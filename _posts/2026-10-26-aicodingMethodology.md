@@ -84,9 +84,46 @@ toc:
   * data-driven mindset：用来自用户的数据反馈来提升AI-app的效果
 
 
+# avoid AI code slop
+参考[poteto姐的talk](https://www.youtube.com/watch?v=O_zcc6Xl12g)
+
+从low trust的agent writes slop code$\rightarrow$human verifies$\rightarrow$issue found循环到high trust的agent writes good code$\rightarrow$agent verifies$\rightarrow$issue found
+
+<div class="row mt-3">
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/aicoding/loop.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/aicoding/outerLoop.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    想实现software factory自动化，需要先优化工作流；然后就可以由外部事件触发自动化工作流
+</div>
+
+
+<div class="row mt-3">
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/aicoding/prompt.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    从上到下比重越来越低；为了避免code slop，应该着重加强codebase、静态分析和验证测试部分，提示词和human review作用有限
+</div>
+
+明确禁止agent不能做什么比告诉agent能做什么更有效：
+* 禁止代码注释：因为代码注释也没有用，现在human review也看不过来，还会误导agent、让agent偷懒打补丁而不是找到真正解决问题的方法
+* 不让agent写需要细微调整的nuance功能/技术
+* 文件结构本身就是一种上下文
+* <mark>每发现一个bug，就用lint rules约束agent或者直接禁用来提升codebase，避免这个问题再次出现</mark>
+* 形式化验证方法如TLA+ model建模状态机确保所有状态都正确处理、Lean proof
+
+
 # AI coding提示词技巧
-## 避免AI阿谀奉承
-[解决办法](https://www.aihero.dev/ai-coding-dictionary/sycophancy)：隐藏个人取向。使用中立的提示词如“帮我review这段代码”而不是“这段代码好吗？”
+* 避免AI阿谀奉承：[解决办法](https://www.aihero.dev/ai-coding-dictionary/sycophancy)：隐藏个人取向。使用中立的提示词如“帮我review这段代码”而不是“这段代码好吗？”
+* 能做什么不能做什么：先给范围再画红线，~~不是一上来就说不能做什么~~，而是<mark>先说具体什么可以做，然后再说具体什么不能做</mark>；因为模型拿到了判断标准，而不是一堆模糊的禁令
+* 用具体维度/评价指标把风险分出层次：比如判断一个操作安不安全，~~不看它看起来危不危险 (太宽泛)~~，而是看两件事：这操作能撤回吗？会影响别人吗？改本地代码当然能撤回、只影响自己，直接放行；git push撤不回来、别人能看到
+* <mark>不变的静态内容放前面，变化的动态内容放后面</mark>，用分割线隔开：利用<mark>缓存命中</mark>来省钱省token
 
 ## 给AI提出更有野心的目标
 ### 高度：提高任务的抽象层次

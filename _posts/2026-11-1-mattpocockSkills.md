@@ -32,7 +32,9 @@ thumbnail: assets/img/mattpocockSkills/workflow.png   # 用于显示在文章列
 ## /ask-matt
 随时/ask-matt，了解如何根据当前场景来使用skills安排工作流。具体不同情况下的工作流见[仓库的~\skills\engineering\ask-matt\SKILL.md](https://github.com/mattpocock/skills/blob/main/skills/engineering/ask-matt/SKILL.md)
 
-## /grill-with-docs & /wayfinder & /grill-me
+## /grill-with-docs & /wayfinder & /grill-me :star:
+和agent对齐非常重要
+
 ### 使用哪种grilling skills
 * /wayfinder：你也不知道具体要做什么、就是有个灵感、但不了解相关知识，<mark>需求不明确</mark>
   * 它会将模糊的需求拆成好几个方向，用类似/to-tickets的思路拆出好几个decision tickets来 (如果执行/setup-matt-pocock-skills的时候选择用github管理issue tracker的话，那他们会有issue的#编号)，然后这个wayfinder会话任务就结束了
@@ -108,7 +110,10 @@ thumbnail: assets/img/mattpocockSkills/workflow.png   # 用于显示在文章列
 
 ## /code-review
 * 作用：/implement负责完成代码 (make it work)，/code-review负责重构/改进代码 (make it good)
-* 使用：coding standards不应该放在AGENTS.md文件中，而是应该另开一个CODING_STANDARDS.md文件来记录。因为AGENTS.md文件在每一个会话session中都会被agent读到，其中的内容可能会被implement agent忽略；而CODING_STANDARDS.md文件只会在/code-review agent中被读到，因此可以保证coding standards被严格遵守。
+* 使用：coding standards不应该放在AGENTS.md文件中，而是应该另开一个CODING_STANDARDS.md文件来记录。因为AGENTS.md文件在每一个会话session中都会被agent读到，其中的内容可能会被implement agent忽略；而CODING_STANDARDS.md文件只会在/code-review agent中被读到，因此可以保证coding standards被严格遵守
+
+## /retro :star:
+复盘非常重要，便于构建良好的工作循环：使用个人经验来提供改进建议，这一步可以把<mark>发现的bug用lint rules约束agent或者直接禁用来提升codebase，提issue到github上，避免这个问题再次出现</mark>
 
 
 

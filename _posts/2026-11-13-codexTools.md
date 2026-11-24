@@ -99,13 +99,39 @@ incremental_tools (是否增量模式)和use_responses_lite (是否使用Lite协
 ### 与Claude Code不同 {#diff}
 如果不使用tool_search，Claude Code的deferred工具直接出现在请求体中，依然可以被LLM调用
 
+# 如何判断是否调用工具、调用哪个工具？
+由LLM自己决定是否调用工具以及调用哪个工具+参数tool_choice+系统提示词的限制
+
+# 如何判断工具能否真正执行？
+agent可以在可用工具列表中看见某个工具，也能生成对它的调用请求；但在实际执行时，会被<mark>Guardian策略审批和用户交互式审批</mark>拦截。若权限/风险评分不足，或用户未批准 (比如文件修改和命令执行工具)，工具不会被真正执行，而是标记为Declined拒绝执行/Failed超时不执行，或进入等待用户通过thread/approveGuardianDeniedAction批准的状态，只有Approved状态的工具才会被真正执行
+
+<div class="row mt-3">
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/learningRoute/checkTools.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    需要经过以上两种审批批准后才能执行的工具
+</div>
+
+根据当前策略判断是否需要审批之后，再选择合适的<mark>沙箱</mark>方式运行。审批回答“这个动作要不要额外获得许可” (用户批准某个动作，不代表进程自动获得无限资源)，沙箱限制“进程能够接触哪些资源”
+
+# 返回工具调用结果
+因为<mark>工具调用结果放在上下文中才能被LLM看到</mark>，~~不是直接把工具调用结果返回给LLM~~，所以要限制每次工具结果的长度，避免一份特别长的工具调用结果就占掉大量上下文空间：
+* 工具结果写进模型返回请求体时，立即应用限长策略裁剪
+* 当包含元数据 (可存储如openai/resource_access资源访问证据、provider、工具结果来源如文件/MCP等主机侧记录的信息)的工具调用消息完整的序列化大小 (整个请求对象的JSON字节数)的总和超过预算 (应$\le$15MB)时，会根据元数据大小从大到小排序、<mark>优先裁剪占用空间最大的若干个元数据条目</mark> (不处理tool_result纯文本内容)，一旦聚合总和回到预算内，立即停止，不动剩下的小条目；以避免一个超大结果把其他小结果都挤掉
+* 针对元数据都很小、纯文本很大，总和超过15MB的情况，只尝试裁剪元数据，不动普通文本；如果元数据全部清空后，消息整体仍然>15MB因为纯文本本身就超了，直接发送请求给LLM，不再裁剪；清空元数据不影响LLM推理，因为LLM消费的是纯文本或多模态内容项中的工具调用结果，但元数据对系统层面有影响，用于资源访问证据、来源溯源、会话恢复、审计、Guardian审批展示等
+* 写入rollout的版本：不同截断阈值 (通常更宽松)，但也会截断；Rollout trace目录中的单独runtime_payload文件保留了完整的原始内容
+
+
+
 # codex如何并行工具调用？
 ResponsesApiRequest请求中的parallel_tool_calls字段表示支持并行，模型自己决定一次回复里返回几个tool_calls (即是否并行)。但工具能否真正并行，还受每个工具的supports_parallel_tool_calls配置限制
 
 ## 具体实现并行
 文件：codex-rs/core/src/tools/parallel.rs
 
-每个tool call被tokio::spawn成独立异步任务，在不同的tokio task里并发调度，通过一个RwLock做并发管控，执行完释放锁，后续工具可进入
+每个tool call被tokio::spawn成独立异步任务，在不同的tokio task里并发调度，通过一个RwLock做并发管控，执行完释放锁，后续工具可进入 (工具能否并行，由工具注册时的声明决定，存在是否允许并行字段/方法)：
 
 * 支持并行的工具：获取RwLock读锁；多个读锁可以同时存在，因此多个支持并行的工具可以真正并发执行
 * 不支持并行的工具：获取RwLock写锁；写锁是独占的，该工具运行期间会阻塞其他所有工具 (读或写)，实现串行化
@@ -113,3 +139,19 @@ ResponsesApiRequest请求中的parallel_tool_calls字段表示支持并行，模
 每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput或 CustomToolCallOutput，携带call_id关联之前的 FunctionCall。这些输出项被收集到input数组中 (不存在message和tool_result block的嵌套关系)，下一轮请求把整个input数组发回给模型。模型通过call_id把每个结果对应到之前的tool_call
 
 # MCP扩展
+
+
+
+# 长调用工具的交互
+短工具调用可以一次等待结束，但是长工具调用需要在运行中观察新输出、与交互式进程继续通信，因此不能等到进程退出再返回
+<div class="row mt-3">
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/learningRoute/longrun.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    长工具调用的交互
+</div>
+
+# 参考文献
+1. [小林coding的Codex Harness架构图解](https://xiaolinnote.com/codex/source/codex_harness.html#_04-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C)

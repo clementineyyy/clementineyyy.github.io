@@ -112,7 +112,7 @@ step3. 开始语义搜索。先把LLM以自然语言表示的搜索请求 (比�
 codex在普通模式下，如果不使用tool_search，模型永远只能看到和调用Direct/DirectModelOnly级别的工具
 
 # 如何判断是否调用工具、调用哪个工具？
-一句话总结：由LLM自己决定是否调用工具以及调用哪个工具 (Claude Code会根据任务决定使用哪种工具，这是模型在训练的时候学习到的模式，不存在硬编码的路由)+参数tool_choice和系统提示词的限制
+一句话总结：<mark>由LLM自己决定是否调用工具以及调用哪个工具 (Claude Code会根据任务决定使用哪种工具，这是模型在训练的时候学习到的模式，不存在硬编码的路由)+参数tool_choice和系统提示词的限制</mark>
 
 使用可选参数tool_choice：tool_choice中的type字段由程序员决定 (auto放权给LLM、any和tool强制必须使用工具、none强制不使用工具)，不是由LLM决定的。如果不传，默认就是{"type": "auto"}，意味着由模型自己决定：是否要调用工具 (如果请求和某个工具描述的能力相匹配、并且答案不在上下文中)还是直接回复、调用哪个工具、工具参数填什么
 
@@ -136,7 +136,32 @@ codex在普通模式下，如果不使用tool_search，模型永远只能看到�
 
 PS. 当在Claude API中调用工具的时候，API会根据工具定义、工具参数和用户特定的系统提示此来构建一个特殊的[系统提示词](https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools#tool-use-system-prompt)，让模型使用指定工具并提供合适的上下文让工具正确调用
 
-# 如何并行工具调用
+# 如何判断工具能否真正执行？
+这是运行时gate，在agent实际调用某个工具之前进行检查；即使工具可见/出现在tool list里，仍可拒绝执行
+
+hasPermissionsToUseTool：运行时权限检查，基于tool名称、输入内容、上下文等动态决定允许/拒绝/需要用户确认；如果结果不是allow也不是deny，即需要用户确认，则弹出permission prompt工具询问用户；用户拒绝后behavior为 deny，工具不执行
+
+# 返回工具调用结果
+因为<mark>工具调用结果放在上下文中才能被LLM看到</mark>，~~不是直接把工具调用结果返回给LLM~~，所以要限制每次工具结果的长度，避免一份特别长的工具调用结果就占掉大量上下文空间；两层长度限制：
+* 单个工具结果限制：单个结果超过maxResultSizeChars (默认50K，由GrowthBook或工具声明中的maxResultSizeChars字段定义；但ReadTool工具该字段设为Infinity不限制，避免Read→文件→Read循环)时，持久化到磁盘，模型只看到2KB preview+文件路径
+* 单条消息聚合预算：在<mark>每轮queryLoop开始时 (针对之前query中的旧工具调用结果</mark>)，若一条用户消息里所有tool_result总和超过200K时，持久化最大的几个块到磁盘，替换为preview+文件路径给模型看
+
+<mark>会话持久化记录日志transcript和发给模型的请求体记录的工具调用结果都是经过applyToolResultBudget处理后的messagesForQuery</mark>；完整内容保存在会话目录下的 tool-results/子目录里
+
+## 工具跑挂之后，对话凭什么还能继续？
+问题：API规定<mark>每个tool_use块，必须有一个对应的tool_result块跟它配对，如果消息历史里有个孤零零的tool_use没人接，下一轮请求直接被API拒收，报错说“工具调用ID对不上”</mark> (比如模型刚吐完tool_use块，网络突然断了，工具根本没开始跑；或者工具跑到一半，用户按了Ctrl+C；或者模型出了问题，主循环临时切换到备用模型，即模型降级，前一个模型吐出的tool_use就没机会执行了，此时消息历史里就有了孤立的tool_use块。你不处理，下一轮想再调模型，API直接拒收，会返回一个请求格式不对的错误)
+
+claude code的解决方案：合成一个假的工具结果塞回去，内容写“这个工具因为XX错误没执行”。yieldMissingToolResultBlocks函数标明类型是tool_result、内容是错误消息、附上对应的工具调用ID让API能配对上，让模型知道上个工具失败了，从而做出合理的下一步决策
+
+## 模型输出被截断了，怎么让用户根本感觉不到
+模型每一次返回都有个最大token数限制：Claude Code常规默认是32k，但在某些灰度场景下会被压到8k以控费，一旦模型一口气想吐12k的内容，到8k就被强行截断，剩下的4k没出来，这种状态在API协议里叫“输出token上限错误”。一个简单的实现是直接弹个错误框“输出过长了，请重试”；或者更糟，干脆忽略截断，让你看到一段戛然而止的回答；claude code的处理办法如下：
+
+step1. 静默升档：模型第一次触发8k截断时，主循环不报错，悄悄把上限调到64k然后重试这一轮，用户完全感知不到出过错，只是觉得这次模型答得稍微慢了点
+
+step2. 在下一轮消息里轻轻推nudge一把，让模型自己续写：对于长输出，如果调到64k还截断，这时候主循环会在下一轮的消息里，塞一段话给模型：“上次输出超长被截断了，请直接从断点续写，不要道歉、不要回顾你刚才在干什么、把剩余工作拆成更小的块”；但nudge不能无限循环，会陷入死锁，所以源码里写死了3次上限：续写3次还不行，主循环就老老实实退出，返回原因“输出超长救不回来”
+
+
+# 如何并行工具调用？
 ## 是否并行-由LLM决定
 * 可以在系统提示词和用户提示词中让模型使用并行工具调用，以提升效率
 * 也可以[设置tool_choice对象中的disable_parallel_tool_use字段](https://platform.claude.com/docs/en/agents-and-tools/tool-use/parallel-tool-use#disable-parallel-tool-use)

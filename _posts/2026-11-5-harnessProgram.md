@@ -31,4 +31,23 @@ toc:
 
 # 关于测试
 * 根据AGENTS.md的内容，每当agent在一个工作轮次中修改代码、提示词、配置或行为，结束前要运行覆盖该改动的测试或验证 (地址是agent/tests)；是否运行取决于修改内容和agent执行的验证流程
-* 
+
+
+# 项目设计
+## 记忆系统
+1\. 你的agent项目记忆机制是怎么做的？
+  参考我的[Agent Loop、上下文工程和记忆系统学习笔记](https://clementineyyy.github.io/blog/2026/loopContextMemory/)和我的[Claude Code系统架构、上下文管理和记忆系统深入解析](https://clementineyyy.github.io/blog/2026/claudecodeArch/#%E8%AE%B0%E5%BF%86%E7%B3%BB%E7%BB%9F)中的笔记内容
+
+  step1. 先指出LLM是无状态的，本质靠上下文治理管理历史信息
+
+  step2. 指出业界主流方案都有共同短板：滑动窗口、对话摘要、向量检索、分层存储存在的个性问题和共性问题
+
+  step3. 主流coding agent项目如claude code、codex、pi的记忆系统设计思路和优点
+
+  step4. 根据以上记忆系统的优缺点，在我的项目中怎么结合设计的记忆系统、效果怎么样
+
+  step5. 在设计、学习和改进过程中，有什么收获、感悟和思考
+2\. 
+
+# 参考文献
+1. []()
