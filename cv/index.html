@@ -33,7 +33,7 @@
   .interest-item {
     padding: 0.5rem 0;
   }
-</style> </div> </div> <a class="anchor" id="projects"></a> <div class="card mt-3 p-3"> <h3 class="card-title font-weight-medium">Projects</h3> <div> <ul class="card-text font-weight-light list-group list-group-flush"> <li class="list-group-item"> <h6 class="title font-weight-bold"></h6> <ul class="items"> <li> <span class="item"> </span> </li> <li> <span class="item"> </span> </li> </ul> </li> </ul> </div> </div> </div> </article> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Xinlu Gu. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Last updated: November 19, 2026. </div> </footer> <script>
+</style> </div> </div> <a class="anchor" id="projects"></a> <div class="card mt-3 p-3"> <h3 class="card-title font-weight-medium">Projects</h3> <div> <ul class="card-text font-weight-light list-group list-group-flush"> <li class="list-group-item"> <h6 class="title font-weight-bold"></h6> <ul class="items"> <li> <span class="item"> </span> </li> <li> <span class="item"> </span> </li> </ul> </li> </ul> </div> </div> </div> </article> </div> </div> </div> </div> <footer class="fixed-bottom" role="contentinfo"> <div class="container mt-0"> © Copyright 2026 Xinlu Gu. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="external nofollow noopener">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" rel="external nofollow noopener" target="_blank">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="external nofollow noopener">GitHub Pages</a>. Last updated: November 24, 2026. </div> </footer> <script>
   window.alFolio = {
     compatBootstrap: false
   };
@@ -240,7 +240,7 @@
         window.tocbot.init({
           tocSelector: "#toc-sidebar",
           contentSelector: '[role="main"]',
-          headingSelector: "h1, h2, h3, h4",
+          headingSelector: "h1, h2, h3, h4, h5",
           ignoreSelector: "[data-toc-skip], .post-title",
           hasInnerContainers: true,
           collapseDepth: 1,
@@ -296,7 +296,29 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/cv/";
           },
-        },{id: "post-agent-loop-上下文工程和记忆系统学习笔记",
+        },{id: "post-pi多智能体协作-安全机制-钩子护栏与沙箱-深入解析",
+        
+          title: "Pi多智能体协作、安全机制 (钩子护栏与沙箱)深入解析",
+        
+        description: "本文结合Pi源码，详细分析了Pi系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/piMulti/";
+          
+        },
+      },{id: "post-pi系统架构-上下文管理和记忆系统深入解析",
+        
+          title: "Pi系统架构、上下文管理和记忆系统深入解析",
+        
+        description: "本文结合Pi源码，详细分析了Pi系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/piArch/";
+          
+        },
+      },{id: "post-agent-loop-上下文工程和记忆系统学习笔记",
         
           title: "Agent Loop、上下文工程和记忆系统学习笔记",
         
@@ -305,6 +327,17 @@ ninja.data = [{
         handler: () => {
           
             window.location.href = "/blog/2026/loopContextMemory/";
+          
+        },
+      },{id: "post-codex系统架构-上下文管理和记忆系统深入解析",
+        
+          title: "Codex系统架构、上下文管理和记忆系统深入解析",
+        
+        description: "本文结合Codex源码，详细分析了Codex系统架构、上下文管理和记忆系统的方案设计、选择理由和实现细节。",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/codexArch/";
           
         },
       },{id: "post-claude-code系统架构-上下文管理和记忆系统深入解析",
