@@ -20,6 +20,12 @@ toc:
 ## agent loop循环
 * <mark>模型继续调用tool_call，循环会继续</mark>：tool_call会导致needs_follow_up = true，从而使agent loop继续 (去执行工具，把结果喂回模型，下一轮模型看到工具调用执行结果之后再决定下一步)；因为<mark>上一轮循环请求的工具调用，会在当前这个处理流程内立即被派发并执行完成，但执行结果FunctionCallOutput只会在下一次模型采样请求/下一轮LLM调用的输入历史中才能被模型看到</mark>；存在情况导致循环提前终止，用户看到的LLM输出不完整
 * <mark>模型不调用tool_call，循环是否结束取决于needs_follow_up标志：模型没有继续调用工具tool_call，任务也不一定立刻结束</mark>，主循环还要确认：有没有用户刚补充的要求、有没有尚未处理的错误、LLM用end_turn表示有没有说完 (在LLM API中由模型提供商返回，harness不自己解析LLM的输出内容来判断话有没有说完，有的模型不提供这个字段)以及停止前的检查是否允许结束；如果用户追加了要求、或者停止前的钩子Stop Hook补入了需要继续处理的内容、或者end_turn表示LLM还没说完，agent可能再执行一轮
+* 当本轮对话未结束时，若用户新发来提示词：
+  * 若当前有一个可被steer插队的active turn，<mark>新消息会被steer插入当前正在运行的turn的pending_input中，立即中断当前正在进行的工具调用等待 (已发出的工具调用会收到取消信号，具体是否立即停止取决于各tool自身实现)，然后在同一个turn内继续采样、把新消息作为后续输入</mark>
+  * 若当前active turn不可steer，新消息不会被插入当前 turn
+  * 若当前没有active turn：则启动一个全新turn来处理新消息
+  * 
+
 
 <div class="row mt-3">
     <div class="col-12 mt-3 mt-md-0">
@@ -60,8 +66,16 @@ codex内部有一套统一的消息格式，提供商需要自己兼容OpenAI Re
 有持续目标，codex自己循环直到达到停止条件 (如成功完成、暂停、打断、token预算限制、等用户输入)；每一轮结束的时候，codex检查当前证据并判断目标是否满足，如果不满足就接着上一个状态继续执行
 
 
-
 # 上下文工程
+## AGENTS.md
+* codex开始任务前会读取它，后续的分析、修改和验收都会遵守其中的规则
+* 这份文件~~没有神秘语法~~，就是Markdown，真正影响效果的是内容够不够具体
+* 工作目录也不只有项目根目录这一层：个人级规则放在~/.codex/AGENTS.md，适合所有项目通用的偏好；项目根目录写团队共识，子目录则放模块专属规则
+  * codex启动时，会从项目根目录一路走到当前工作目录，每一层最多选一个规则文件，再按从远到近的顺序拼起来，离当前目录越近的规则排在越后面，发生冲突时也就拥有更高优先级 (如果codex当前打开的是仓库根目录，后面才让它去改api/，它不会因为读到了API文档，就自动把更深处的AGENTS.md补进当前规则链，要测试API目录的规则，可以在codex中把这个子目录作为本地项目打开，或者把所有文档都要遵守的规则写到根目录)
+  * 同一层如果同时存在AGENTS.override.md和AGENTS.md文件，codex会优先选择override文件，这一层只取优先命中的那一份，不会把两份都读进来
+
+
+
 ## 压缩/compact
 ### 自动压缩的2个位置/时机
 真正决定上下文压力的~~不是消息数量 (因为一条工具结果可能比几十轮普通对话还长)~~，而是token用量；codex会维护当前上下文的token使用状态，优先采用服务端反馈，必要时再根据历史估算，然后把当前用量和自动压缩阈值 (可提前设置，<mark>不会等上下文窗口彻底塞满才处理</mark>)进行比较，当历史继续增长并达到阈值，才轮到真正的上下文压缩：
@@ -70,7 +84,7 @@ codex内部有一套统一的消息格式，提供商需要自己兼容OpenAI Re
 * 轮次运行中，工具结果把上下文推到阈值后：codex干活干到一半，也可能先整理上下文腾出空间，再接着往下做
 
 ### 怎么压缩
-codex会<mark>根据配置和模型服务能力选择压缩方式：启用token 预算策略时，达到预算后直接建立新窗口，不再生成摘要；否则，服务端支持远程压缩就交给服务端处理，不支持才使用本地总结</mark>
+codex会<mark>根据配置和模型服务能力选择压缩方式：启用token预算策略时，达到预算后直接建立新窗口，不再生成摘要；否则，服务端支持远程压缩就交给服务端处理，不支持才使用本地总结</mark>
 
 压缩结果还会作为恢复点checkpoint写入rollout，之后恢复任务/会话时，可以从最近一次有效checkpoint接上后续记录，见[会话持久化的会话如何恢复部分](#会话如何恢复)
 
@@ -95,7 +109,8 @@ step3. 摘要可能漏掉项目规则，这些规则codex会单独提供：基�
 </div>
 
 ## 会话如何存储？
-### rollout JSONL文件 (权威历史)
+### 物理存储结构
+#### rollout JSONL文件 (权威历史)
 <mark>原始对话历史 (用户消息、模型输出、工具调用、事件和上下文变化等)不逐条写入数据库，而是持久化为磁盘上的rollout JSONL文件</mark>，即名为rollout文件，以JSONL格式存储；一个thread_id对应一个活跃的rollout JSONL，因为一个session_id下可以有多个thread_id (根线程、fork出的子线程、subagent等)；但一个thread_id不一定只对应一个rollout文件，因为执行thread/revert后，thread_id保持不变，但会话会切换到一个新的rollout文件。此时同一个thread_id对应多个rollout文件 (旧的作为历史快照，新的作为当前活跃文件)，同一个thread_id可以指向不同日期目录下的不同rollout文件，光靠文件名无法判断哪个是当前选中的
 
 rollout文件的路径：
@@ -107,7 +122,7 @@ rollout JSONL文件的内容包括：
 
 rollout JSONL记录的~~并不是和会话相关的全部内容~~，而是只记录可回放的历史事件序列。某些展示/查询用元数据 (如preview、title/name、section、section_position、archived_at、recency_at等)主要存储在SQLite中，作为可重建的查询索引
 
-### SQLite数据库 (可丢失、可重建) {#sqlite-index}
+#### SQLite数据库 (可丢失、可重建) {#sqlite-index}
 为什么需要SQLite数据库：
 * 因为rollout JSONL文件每次只能顺序追加，不适合做“列出所有会话”“按XXX字段 (如section)筛选/排序””这类查询。如果没有SQLite，做list_threads或read_thread时，代码必须扫描整个$CODEX_HOME/sessions/目录，逐个打开JSONL读取首行SessionMeta，才能拼出会话列表，会话多了之后，这次全盘扫描的代价很高；SQLite把这些元数据做成索引行，查询即可返回，不需要触碰磁盘上的大量JSONL文件
 * 路径里包含日期目录，光有thread_id无法直接构造路径：路径里带thread_id解决的是“已知完整路径时如何读取文件”的问题；SQLite解决的是“只知道thread_id如何快速找到文件”以及“如何高效列表/筛选会话”的问题
@@ -116,6 +131,21 @@ rollout JSONL记录的~~并不是和会话相关的全部内容~~，而是只记
 SQLite数据库充当可重建的查询索引和元数据缓存 (SQLite里的数据即使丢了，也可以从JSONL重建，所以它不是历史权威，只负责快速索引)，核心作用：
 * 建立thread_id → rollout文件完整绝对物理路径的映射 (尽管rollout文件名反应了和thread_id的关系，但是使用SQLite读取线程元数据，可以快速定位rollout路径，避免全盘扫描sessions/目录)；SQLite执行get_thread(thread_id)时，直接返回完整路径，代码不需要自己拼日期目录
 * SQLite里的ThreadMetadata还缓存preview、title、cwd、model、recency_at、archived_at、section等字段，供list_threads/read_thread快速查询：这些值确实不会频繁变成版本记录，但它们会被反复读取 (如列表页、会话卡片、排序)。把它们缓存在SQLite里，是为了避免每次都去解析JSONL，属于典型的“读多写少”的索引场景；而且读取元数据不需要解析整个JSONL文件，直接从数据库行返回，速度远快于解析JSONL
+
+### 逻辑结构
+codex的会话session不是单条线，而是一棵session tree；线程thread也不是单条线，同一thread_id可对应多个rollout文件，形成版本树、历史分支
+
+<div class="row mt-3">
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/learningRoute/node.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+    <div class="col-12 mt-3 mt-md-0">
+        {% include figure.liquid loading="eager" path="assets/img/learningRoute/sessionTree.png" class="img-fluid rounded z-depth-1" %}
+    </div>
+</div>
+<div class="caption">
+    字段与树节点的对应以及session tree示例
+</div>
 
 
 ## 会话如何写入？

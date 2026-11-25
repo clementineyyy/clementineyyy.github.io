@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Codex工具调用源码深入解析
+title: Codex工具调用&skills源码深入解析
 date: 2026-11-13 15:29:00
 description: 本文结合codex源码，详细分析了codex工具调用的方案设计、选择理由和实现细节。
 tags: agent-harnessing
@@ -12,7 +12,7 @@ toc:
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
 ---
 
-本文整理了本文结合codex源码，详细分析了codex工具调用的方案设计、选择理由和实现细节。其中所有代码参考位置均对应笔者fork仓库，而非项目原始仓库。
+本文整理了本文结合codex源码，详细分析了codex工具调用&skills的方案设计、选择理由和实现细节。其中所有代码参考位置均对应笔者fork仓库，而非项目原始仓库。
 
 ---
 # 工具定义
@@ -138,9 +138,6 @@ ResponsesApiRequest请求中的parallel_tool_calls字段表示支持并行，模
 
 每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput或 CustomToolCallOutput，携带call_id关联之前的 FunctionCall。这些输出项被收集到input数组中 (不存在message和tool_result block的嵌套关系)，下一轮请求把整个input数组发回给模型。模型通过call_id把每个结果对应到之前的tool_call
 
-# MCP扩展
-
-
 
 # 长调用工具的交互
 短工具调用可以一次等待结束，但是长工具调用需要在运行中观察新输出、与交互式进程继续通信，因此不能等到进程退出再返回
@@ -152,6 +149,22 @@ ResponsesApiRequest请求中的parallel_tool_calls字段表示支持并行，模
 <div class="caption">
     长工具调用的交互
 </div>
+
+# Skills
+按需加载
+
+## skills使用
+skill的核心是SKILL.md，也可以携带脚本、参考资料、模板和其他资源；codex会根据SKILL.md中的description字段来判断什么时候应该使用skill，所以要写清skill做什么、什么时候用、产出什么
+
+codex启动时先看每个skill的名称和描述，当用户任务与描述匹配，或者用户显式斜杠命令调用某个skill时，它才读取完整正文，正文里引用的长资料和脚本，也可以继续按需读取或执行
+
+## 创建skills
+Codex里内置了/skill-creator，加上用户提示词可以直接创建skill
+
+
+# MCP扩展
+
+
 
 # 参考文献
 1. [小林coding的Codex Harness架构图解](https://xiaolinnote.com/codex/source/codex_harness.html#_04-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E6%80%8E%E4%B9%88%E6%89%A7%E8%A1%8C)

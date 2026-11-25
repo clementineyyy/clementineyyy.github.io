@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 工具调用学习笔记
+title: 工具调用、Skills&MCP学习笔记
 date: 2026-11-10 21:18:00
 description: 本文整理了agent harness中工具调用的学习笔记。
 tags: agent-harnessing
@@ -71,9 +71,39 @@ toc:
 # 如何判断工具能否真正执行？
 见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)、[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)和[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)的对应部分
 
+# Skills
+
+## 渐进式披露
+将技能信息分为三个层次，智能体按需逐步加载，既确保必要时不遗漏细节，又避免一次性将过多内容塞入上下文窗口
+
+step1. 元数据Metadata：每个技能都存放在一个独立的文件夹中，核心是一个名为SKILL.md的Markdown文件，这个文件必须以YAML格式的Frontmatter开头，定义技能的基本信息；当<mark>智能体启动时，它会扫描所有已安装的技能文件夹，仅读取每个SKILL.md的frontmatter部分，将这些元数据加载到系统提示词中；而MCP实现中，当客户端连接到一个服务器时，通常会通过tools/list请求获取所有可用工具的完整工具定义JSON Schema (一次性加载全部)</mark>
+
+step2. 指令instructions：当智能体通过分析用户请求，判断某个技能与当前任务高度相关时，会读取该技能的完整SKILL.md文件内容，将详细的指令、注意事项、示例等加载到上下文中
+
+step3. 脚本与参考Scripts&References：对于更复杂的技能，SKILL.md可以引用同一文件夹下的其他文件：脚本、配置文件、参考文档等，智能体仅在需要时才加载这些资源；这样设计的好处：
+* 无限的知识容量：通过脚本和外部文件，技能可以"携带"远超上下文限制的知识。例如，一个数据分析技能可以附带一个1GB的数据文件和一个查询脚本，智能体通过执行脚本来访问数据，而无需将整个数据集加载到上下文中
+* 确定性执行：复杂的计算、数据转换、格式解析等任务交给代码执行，避免了LLM生成过程中的不确定性和幻觉问题
+
+## Skills撰写技巧
+* 渐进式披露/按需读取：SKILL.md只写高频主干流程，把低频的、超长的细节拆到references目录，正文里留一句指路的话就行
+* 如果skill里有一步是固定的机械操作，比如某种固定格式的转换，与其在正文里教模型“第一步第二步第三步”，不如直接写个脚本放进scripts目录，正文里一句“执行这个脚本”
+
+## Skills VS MCP
+两者是互补而非竞争关系：
+* skill给的是领域专业知识和流程，提供了操作手册或SOP (标准作业程序)，教导智能体在特定场景下如何正确组合使用这些工具、告诉LLM该怎么做
+* MCP给的是工具：提供标准化的访问接口，让智能体能够够得着外部世界的数据和工具
+* 两者的加载方式也不同：读取每个SKILL.md的frontmatter部分，将这些元数据加载到系统提示词中 (按需加载)；而MCP实现中，当客户端连接到一个服务器时，通常会通过tools/list请求获取所有可用工具的完整工具定义JSON Schema (一次性加载全部)
+* Skills和MCP组合架构的优势在于：
+  * 关注点分离：MCP专注于能力，Skills专注于智慧
+  * 成本优化：Skills渐进式加载大幅降低token消耗
+  * 可维护性：业务逻辑Skills与基础设施MCP解耦
+  * 复用性：同一个MCP服务器可以被多个Skills使用
+
 # MCP扩展
+MCP (Model Context Protocol)提供了一套统一的通信规则，让agent可以用相同的方式发现和调用不同的外部工具，~~而不需要每接入一个外部系统，都要单独定义工具说明、参数格式和返回结果~~；MCP (理解为充电转换器)给AI (理解为手机)和外部工具 (理解为各国不同型号电源)之间定一个统一的插口，工具方照着协议实现一个MCP Server，任何支持MCP的AI应用都能直接插上用，不用再各家单独适配；外部服务通过MCP告诉agent自己能提供什么数据和操作，agent再根据当前任务选择对应的能力
 
-
+## 暴露工具
+当客户端连接到一个服务器时，通常会通过tools/list请求<mark>获取所有可用工具的完整工具定义JSON Schema (一次性加载全部)</mark>
 
 
 # 业界工具调用实践对比
@@ -142,8 +172,6 @@ PTC流程：用程序编排工具调用
 pi-codemode
 
 
-# Further Questions
-
 
 # 参考文献
 1. [工具调用菜鸟教程](https://www.runoob.com/ai-agent/ai-agent-function-calling.html)
@@ -154,3 +182,4 @@ pi-codemode
 6. [PTC参考Henry Li的文章](https://my.feishu.cn/wiki/CYANw7pSNiEhVckqaNXcCS8inAh)
 7. [Claude Cookbook：Tool search with embeddings](https://platform.claude.com/cookbook/tool-use-tool-search-with-embeddings)
 8. [Claude Platform Docs的Tools部分](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview)
+9. [DataWhale的Hello-Agents笔记](https://github.com/datawhalechina/hello-agents/blob/main/Extra-Chapter/Extra05-AgentSkills%E8%A7%A3%E8%AF%BB.md#agent-skills-%E4%B8%8E-mcp%E6%99%BA%E8%83%BD%E4%BD%93%E8%83%BD%E5%8A%9B%E6%89%A9%E5%B1%95%E7%9A%84%E4%B8%A4%E7%A7%8D%E8%8C%83%E5%BC%8F)

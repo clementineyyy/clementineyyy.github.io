@@ -1,8 +1,8 @@
 ---
 layout: post
-title: Claude Code工具调用源码深入解析
+title: Claude Code工具调用&skills源码深入解析
 date: 2026-11-13 15:29:00
-description: 本文结合Claude Code源码，详细分析了Claude Code工具调用的方案设计、选择理由和实现细节。
+description: 本文结合Claude Code源码，详细分析了Claude Code工具调用&skills的方案设计、选择理由和实现细节。
 tags: agent-harnessing
 categories: technology-stack
 citation: true
@@ -12,7 +12,7 @@ toc:
 # thumbnail: assets/img/9.jpg   # 用于显示在文章列表中的缩略图
 ---
 
-本文整理了本文结合Claude Code源码，详细分析了Claude Code工具调用的方案设计、选择理由和实现细节。其中所有代码参考位置均对应笔者fork仓库，而非项目原始仓库。
+本文整理了本文结合Claude Code源码，详细分析了Claude Code工具调用&skills的方案设计、选择理由和实现细节。其中所有代码参考位置均对应笔者fork仓库，而非项目原始仓库。
 
 ---
 # 三大类工具
@@ -66,6 +66,11 @@ toc:
 
 ## 3. 跑在服务器上的工具
 对于web_search，web_fetch，code_execution和tool_search，由Anthropic服务器来执行工具调用循环，客户端直接得到结果。客户端一个请求可能导致好几个服务器工具调用，但是服务器工具调用循环是有迭代次数限制的。当模型达到迭代次数限制但是还没有结束循环时，服务器会返回stop_reason: "pause_turn" (意味着工作未完成)而不是"end_turn"，让模型继续处理
+
+# grep工具检索代码
+代码检索是把和当前任务相关的几个片段塞给模型
+claude code~~[不用RAG来检索代码]()~~，而是用grep
+
 
 
 # 怎么暴露工具？
@@ -217,6 +222,25 @@ step5. code execution代码执行过程结束，Claude提供最终回复
 # MCP扩展
 
 
+# Skills
+每个skill是一个文件夹，里面放一个SKILL.md，文件开头有一段frontmatter (用两条横线包起来的元信息，里面有名字name和一句话描述description)；skill可以放在claude code内置目录、~/.claude/skills/用户目录 (用户级skill)、项目仓库.claude/skills/ (项目级skill)、插件、MCP远程服务器动态提供
+
+## 渐进式披露
+
+step1. <mark>启动时只加载所有skill的名字和一句话描述，拼成清单、常驻上下文</mark>，~~正文一个字都不读~~：跟着系统提醒system-reminder一起送进上下文
+* 规定整份skill清单的预算只有上下文窗口的1%+单条描述的硬上限是250个字符，超了直接截断
+* 如果用户的skill实在太多、依然装不下，就使用降级方案：先尝试全量描述，超预算就按剩余空间把每条描述等比截短；再不行就走最极端的路线，第三方skill只留名字，描述全砍；但是官方内置skill的描述永远不被等比缩短/截断
+* <mark>LLM怎么知道调用哪个skill：这里是skills在调用前唯一被LLM看到的地方，只是相信模型自己能看懂然后自觉调用</mark>，~~不需要任何检索~~；模型有时候会想起来但懒得用，看到匹配的skill，却自己顺手把活干了，所以在SkillTool的工具说明里规定只要有skill跟用户请求匹配上，调用它就是一票否决级的硬性要求，必须先调skill再说别的，绝不允许嘴上提到skill却不真正调用
+
+step2. 模型判断当前任务需要使用skills时才完整读SKILL.md文件：包装成一条用户消息user message，直接插进了对话流 (但界面上不会像真的用户发言一样刷出来)；~~而不是作为system prompt插入，因为系统提示词在整个会话里是要反复使用的，考虑到缓存命中计费规则，改动它会导致提示词缓存Prompt Cache大面积失效，每轮都重新计费，而追加一条消息是纯增量，前面的缓存一点不伤~~
+
+step3. 附录references&scripts按需读取
+
+
+## 动态skill
+skill不只是静态文档，还可以：
+* 接收参数：正文里可以写$ARGUMENTS占位符，用户敲/skill名 提示词 的时候，提示词会被原样填进占位符的位置；模型自主调用时同样可以传参
+* 执行命令：正文里可以用!\`命令\`的语法嵌一段shell命令，skill被调用时，claude code会先把这条命令跑了，把输出结果填进正文，再把填好的成品交给模型；但是出于安全考虑，来自MCP服务器的远程skill，永远不执行正文里嵌的命令
 
 
 # 安全机制
@@ -268,6 +292,7 @@ step4. PreToolUse Hooks是工具执行之前的自定义拦截点：它既可以
 <div class="caption">
     什么是沙箱sandbox以及claude code的沙箱隔离策略
 </div>
+
 
 
 # 参考文献
