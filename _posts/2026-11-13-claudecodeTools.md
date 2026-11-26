@@ -67,11 +67,6 @@ toc:
 ## 3. 跑在服务器上的工具
 对于web_search，web_fetch，code_execution和tool_search，由Anthropic服务器来执行工具调用循环，客户端直接得到结果。客户端一个请求可能导致好几个服务器工具调用，但是服务器工具调用循环是有迭代次数限制的。当模型达到迭代次数限制但是还没有结束循环时，服务器会返回stop_reason: "pause_turn" (意味着工作未完成)而不是"end_turn"，让模型继续处理
 
-# grep工具检索代码
-代码检索是把和当前任务相关的几个片段塞给模型
-claude code~~[不用RAG来检索代码]()~~，而是用grep
-
-
 
 # 怎么暴露工具？
 取出当前环境下理论上可能出现的全部工具全集，经规则过滤之后将工具子集放入本turn发给LLM的请求体的tools字段中。请求体的tools字段装的是每一个已入选工具的完整schema (name+description+完整的input_schema本质上是该工具的调用参数parameters，src/Tool.ts中Tool接口的绝大部分方法，是Claude Code客户端本地框架内部使用的运行时协议，不会发送给LLM，LLM也完全看不到)
@@ -148,7 +143,7 @@ hasPermissionsToUseTool：运行时权限检查，基于tool名称、输入内�
 
 # 返回工具调用结果
 因为<mark>工具调用结果放在上下文中才能被LLM看到</mark>，~~不是直接把工具调用结果返回给LLM~~，所以要限制每次工具结果的长度，避免一份特别长的工具调用结果就占掉大量上下文空间；两层长度限制：
-* 单个工具结果限制：单个结果超过maxResultSizeChars (默认50K，由GrowthBook或工具声明中的maxResultSizeChars字段定义；但ReadTool工具该字段设为Infinity不限制，避免Read→文件→Read循环)时，持久化到磁盘，模型只看到2KB preview+文件路径
+* 单个工具结果限制：单个结果超过maxResultSizeChars (默认50K，由GrowthBook或工具声明中的maxResultSizeChars字段定义；但ReadTool工具该字段设为Infinity不限制，避免Read→文件→Read循环)时，持久化到磁盘，<mark>模型只看到2KB preview+文件路径</mark>
 * 单条消息聚合预算：在<mark>每轮queryLoop开始时 (针对之前query中的旧工具调用结果</mark>)，若一条用户消息里所有tool_result总和超过200K时，持久化最大的几个块到磁盘，替换为preview+文件路径给模型看
 
 <mark>会话持久化记录日志transcript和发给模型的请求体记录的工具调用结果都是经过applyToolResultBudget处理后的messagesForQuery</mark>；完整内容保存在会话目录下的 tool-results/子目录里
@@ -227,9 +222,9 @@ step5. code execution代码执行过程结束，Claude提供最终回复
 
 ## 渐进式披露
 
-step1. <mark>启动时只加载所有skill的名字和一句话描述，拼成清单、常驻上下文</mark>，~~正文一个字都不读~~：跟着系统提醒system-reminder一起送进上下文
-* 规定整份skill清单的预算只有上下文窗口的1%+单条描述的硬上限是250个字符，超了直接截断
-* 如果用户的skill实在太多、依然装不下，就使用降级方案：先尝试全量描述，超预算就按剩余空间把每条描述等比截短；再不行就走最极端的路线，第三方skill只留名字，描述全砍；但是官方内置skill的描述永远不被等比缩短/截断
+step1. <mark>启动时只加载所有skill的名字和一句话描述，拼成清单、常驻上下文</mark>，~~正文一个字都不读~~：跟着系统提醒system-reminder一起送进上下文：
+* 单条skill结果限制：单条描述的硬上限是250个字符，超了直接截断
+* 整份skill清单结果限制：规定整份skill清单的预算只有上下文窗口的1%，超了直接截断；如果用户的skill实在太多、依然装不下，就使用降级方案：先尝试全量描述，超预算就按剩余空间把每条描述等比截短；再不行就走最极端的路线，第三方skill只留名字，描述全砍；但是官方内置skill的描述永远不被等比缩短/截断
 * <mark>LLM怎么知道调用哪个skill：这里是skills在调用前唯一被LLM看到的地方，只是相信模型自己能看懂然后自觉调用</mark>，~~不需要任何检索~~；模型有时候会想起来但懒得用，看到匹配的skill，却自己顺手把活干了，所以在SkillTool的工具说明里规定只要有skill跟用户请求匹配上，调用它就是一票否决级的硬性要求，必须先调skill再说别的，绝不允许嘴上提到skill却不真正调用
 
 step2. 模型判断当前任务需要使用skills时才完整读SKILL.md文件：包装成一条用户消息user message，直接插进了对话流 (但界面上不会像真的用户发言一样刷出来)；~~而不是作为system prompt插入，因为系统提示词在整个会话里是要反复使用的，考虑到缓存命中计费规则，改动它会导致提示词缓存Prompt Cache大面积失效，每轮都重新计费，而追加一条消息是纯增量，前面的缓存一点不伤~~

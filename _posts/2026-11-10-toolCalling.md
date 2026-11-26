@@ -71,8 +71,28 @@ toc:
 # 如何判断工具能否真正执行？
 见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)、[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)和[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)的对应部分
 
-# Skills
+# 代码检索工具
+代码检索是把和当前任务相关的几个片段塞给模型
+harness[不用RAG来检索代码的原因见我的RAG笔记](https://clementineyyy.github.io/blog/2026/RAG/#rag%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9)，而是用代码检索工具；<mark>整个过程是模型一步步推进的，每一步看到上一步的结果，决定下一步搜什么、读什么，每一步都基于上一步的结果调整方向</mark>，而RAG是一次性召回、没有循环
 
+## glob
+按文件名pattern (如\*\*/*.tsx)找文件，设计：
+* 结果按修改时间倒序排列：最近改过的文件排在前面，因为大部分时候，最近改过的就是跟当前任务最相关的，这是个很朴素但很有效的启发式规则
+* 结果有100文件硬上限：超出会截断，避免输出爆炸把上下文塞满，模型如果还想看更多，可以收紧pattern再搜一次
+
+## grep
+按内容关键字找代码；单独使用grep工具而不使用bash工具调命令grep -r "xxx" .的原因：
+* 权限统一管控：bash是个万能工具，理论上能跑任何命令，包括rm、curl、git push，用grep工具相当于在高频操作上单独画了一道权限闸门，更安全
+* 输出格式可控：直接跑bash grep，输出就是一坨纯文本，但grep工具可以提供结构化输出：行号、上下文行、按文件分组、甚至支持显式匹配行的内容、只返回匹配文件名和只返回匹配行的数量三种粒度，让模型按需选择，token浪费少很多$\rightarrow$<mark>所以只返回检索到的相关代码片段/文件路径 (默认)/计数</mark>，~~而不会把整个目标文件放进上下文~~
+* 性能：claude code的grep底层用的是ripgrep，不是传统 grep；ripgrep是Rust写的，多线程并行、自动尊重.gitignore (不去搜垃圾目录如node_modules)，速度比传统grep快很多
+
+## read
+按需读文件内容，需要哪部分就只读哪部分：
+* 默认只读2000行，超出会截断；如果文件超出2000行，那么模型可以指定offset和limit参数，分段读取 (比如先读1到2000行看看大概结构，确定要看的具体位置，再offset=3500, limit=500精准读那一段)
+* 每次都直接stat磁盘文件、读取最新内容，不缓存、不索引、不预处理：只要刚改了文件，下一次read立刻能看到新内容，实时不滞后
+
+
+# Skills
 ## 渐进式披露
 将技能信息分为三个层次，智能体按需逐步加载，既确保必要时不遗漏细节，又避免一次性将过多内容塞入上下文窗口
 
@@ -111,6 +131,7 @@ MCP (Model Context Protocol)提供了一套统一的通信规则，让agent可�
 相同点：
 * 工具定义可见范围：LLM都会看到<mark>工具定义 (仅包括名称、描述、参数</mark>，由服务器端发给LLM)，这样才能写出包含name和parameters的tool_use block
 * 工具并行执行：客户端允许并行执行之后，模型自己决定要不要并行 (这只是决定模型能否在一次回复里输出多个tool_use，只是允许模型并发提出多个工具调用，并不代表客户端一定会同时执行它们)；模型输出多个tool_use后，客户端在真正执行前，还会查每个工具的是否允许并行字段/方法 (堵死了任意调用的后患)
+* 单条工具调用结果返回时截断：超出阈值时截断
 * LLM只能<mark>在上下文中看到工具调用结果</mark>，~~工具调用结果不是直接单独返回给LLM的~~
 
 |  | Codex | Claude Code | Pi |
@@ -119,9 +140,10 @@ MCP (Model Context Protocol)提供了一套统一的通信规则，让agent可�
 | 决定是否调用工具、调用什么工具 | tool_choice参数+提示词+LLM自行判定 | tool_choice参数+提示词+LLM自行判定 | 提示词+LLM自行判定 |
 | 工具可见但拒绝执行的拦截机制 | Guardian策略审批和用户交互式审批 | hasPermissionsToUseTool：运行时权限检查 | 默认不实现beforeToolCall钩子接口，需要开发者自行实现；因此默认工具一旦可见，模型就能看到并生成调用 |
 | 工具并行执行的实现 | 实际由读写锁来控制 | 工具分成并行分组和串行分组，由Python中的asyncio.gather或JavaScript中的Promise.all来控制并行 | 任务调度器scheduler+allSettled连接策略等待全部完成才汇总返回+每个tool_call一个独立任务、独立运行 |
-| 工具调用结果返回截断方式 | 单个工具结果限制+单条消息聚合预算 (只针对元数据) | 单个工具结果限制+单条消息聚合预算 (针对完整工具调用结果) | 无 |
-| 工具调用结果返回截断持久化存储 | rollout保存到工具调用结果也经过截断，但比返回给LLM的截断规则更宽松 | transcript保留的工具调用结果和发给LLM的请求体记录的工具调用结果一致 | 无 | 
+| 工具调用结果返回截断方式 | 单个工具结果限制 (<u>两头都保留、中间截断；无完整路径暂存</u>)+单条消息聚合预算 (<u>只针对元数据</u>) | 单个工具结果限制 (<u>仅从前往后截断；有完整路径暂存可回看</u>)+单条消息聚合预算 (<u>针对完整工具调用结果</u>) | 仅单个工具结果限制 (<u>根据不同工具调用，选择从前往后/从后往前截断；；有完整路径暂存可回看</u>) |
+| 工具调用结果返回截断持久化存储 | rollout保存的工具调用结果也经过截断，但比返回给LLM的截断规则更宽松，<u>Rollout trace目录中的单独runtime_payload文件保留了完整的原始内容</u> | transcript保留的工具调用结果和发给LLM的请求体记录的工具调用结果一致 | 持久化到jsonl中的是截断后的结果，与发给LLM的请求一致 | 
 | 工具调用结果返回形式 | 每个工具调用完成后，产生一个独立的ResponseItem::FunctionCallOutput追加到input数组后面返回给LLM (不会嵌套在一个返回消息中)；工具调用结果的顺序和工具调用请求的顺序保持一致 (FuturesOrdered保证) | <u>多个tool_result block存放在同一个message中</u>，添加到上下文后面返回给LLM；<u>工具调用结果的顺序和工具调用请求的顺序不必保持一致</u> | 工具调用结果按照toolCallId调用的顺序，独立追加在上下文后面 (不会嵌套在一个返回消息中)，即<u>工具调用结果的顺序和工具调用请求的顺序保持一致</u> |
+| skills过长处理策略 |  | 单条skill结果截断+整份skill清单结果截断 | 无 |
 
 
 具体见[Codex工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/codexTools/)、[Claude Code工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/claudecodeTools/)和[Pi Agent工具调用源码深入解析](https://clementineyyy.github.io/blog/2026/piTools/)

@@ -145,7 +145,7 @@ system prompt不是一个静态的文本文件，它是动态组装的，由十�
 * 输出风格约束
 * <mark>插入一条__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__来使用/命中缓存</mark>：分割线之上的内容对所有用户都完全一样；分割线之下的内容，每个用户都不同，命中缓存可以省钱
 * 环境信息注入：让模型知道自己在哪里，是什么操作系统、什么Shell、什么项目目录
-* 最后加上CLAUDE.md、记忆系统的记忆、MCP
+* 最后加上CLAUDE.md文件、记忆系统的记忆、MCP
 
 # 压缩/compact
 压缩是自动触发的，不会在每一轮都压缩一次 (因为压缩本身也要烧token调一次模型做摘要，能不压就不压)；还有标志位State.hasAttemptedReactiveCompact<mark>防止同一轮内反复压</mark>，一次压完还是塞不下，就别再压第二次了，避免陷入“压缩 → 还是塞不下 → 再压”的死循环，新一轮开始时这个标志会被重置；压缩流程如下 (压缩代价逐步升高，前3步都是0 API开销，最后2步二选一执行)：
@@ -304,6 +304,7 @@ step3. 把旧文件里的title/tag/agent/mode等读入Project内存缓存，清�
 
 step4. :star:adoptResumedSessionFile把当前持久化目标绑定到旧transcript，然后立刻用reAppendSessionMetadata重挂metadata (把内存缓存中的元数据追加写入该旧transcript文件的尾部)；解决了用户resume了旧session，改了标题或其他metadata但还没发新消息就退出，导致丢失元数据修改 (因为元数据设计为缓存先行，退出前统一回写，不会立即写盘,避免产生只有元数据的空文件)的问题
 
+## 会话如何分支
 
 
 # 记忆系统
